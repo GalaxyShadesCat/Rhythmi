@@ -1,9 +1,17 @@
 import React, { useState } from "react";
 import { useMongoDB, type User } from "@/hooks/useMongoDB";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 
-export default function UserPanel() {
-  const { user, saveUser, clearUser } = useLocalStorage();
+type UserPanelProps = {
+  user: User | null;
+  saveUser: (user: User) => void;
+  clearUser: () => void;
+};
+
+export default function UserPanel({
+  user,
+  saveUser,
+  clearUser,
+}: UserPanelProps) {
   const {
     createUser,
     getUserByUsername,

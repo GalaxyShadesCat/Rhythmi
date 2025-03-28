@@ -22,7 +22,7 @@ export default function Home() {
     isECGStreaming,
   } = useHeartRateSensor();
 
-  const { user } = useLocalStorage();
+  const { user, saveUser, clearUser } = useLocalStorage();
 
   const record: RecordData | null = useMemo(() => {
     if (!user || !user._id || ecgHistory.length === 0) return null;
@@ -37,7 +37,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-teal-100 p-8">
-      <UserPanel />
+      <UserPanel user={user} saveUser={saveUser} clearUser={clearUser} />
       <HeartRateMonitor
         isConnected={isConnected}
         isECGStreaming={isECGStreaming}
