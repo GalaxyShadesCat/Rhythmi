@@ -28,7 +28,7 @@ export default function UserPanel() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "user_name" ? value.toLowerCase() : value,
+      [name]: name === "user_name" ? value.toLowerCase().trim() : value,
     }));
 
     // Clear messages while typing
