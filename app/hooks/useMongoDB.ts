@@ -1,14 +1,27 @@
 import { useState } from "react";
 
+export interface HRPoint {
+  timestamp: number;
+  value: number;
+}
+
 export interface ECGPoint {
   timestamp: number;
   value: number;
 }
 
+export const ACTIVITY_COLORS: Record<ActivityType, string> = {
+  rest: "blue",
+  walk: "green",
+  run: "red",
+};
+
+export type ActivityType = "rest" | "walk" | "run";
+
 export interface ActivitySegment {
+  type: keyof typeof ACTIVITY_COLORS;
   start: number;
   end: number;
-  activity: string;
 }
 
 export interface User {
@@ -23,6 +36,7 @@ export interface RecordData {
   user_id: string; // Reference to User._id
   datetime: string; // ISO string
   ecg: ECGPoint[];
+  hr: HRPoint[];
   activity_segments: ActivitySegment[];
 }
 
@@ -90,6 +104,8 @@ export function useMongoDB() {
     setLoading(true);
     setError(null);
     setSuccess(false);
+
+    console.log("Uploading record:", record);
 
     try {
       const response = await fetch("/api/records", {

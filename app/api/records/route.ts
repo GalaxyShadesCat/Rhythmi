@@ -3,9 +3,9 @@ import { getDb } from "@/lib/mongodb";
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { user_id, datetime, ecg, activity_segments } = body;
+  const { user_id, datetime, ecg, hr, activity_segments } = body;
 
-  if (!user_id || !datetime || !ecg || !activity_segments) {
+  if (!user_id || !datetime || !ecg || !hr || !activity_segments) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
@@ -16,6 +16,7 @@ export async function POST(req: Request) {
     user_id,
     datetime,
     ecg,
+    hr,
     activity_segments,
   });
 

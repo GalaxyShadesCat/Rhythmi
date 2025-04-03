@@ -1,4 +1,3 @@
-import React, { useEffect } from "react";
 import { useMongoDB, RecordData } from "@/hooks/useMongoDB";
 
 function UploadButton({ record }: { record: RecordData | null }) {
@@ -10,9 +9,6 @@ function UploadButton({ record }: { record: RecordData | null }) {
     }
   };
 
-  useEffect(() => {
-    console.log(record?.ecg);
-  }, [record]);
   const isDisabled =
     loading || !record || !record.user_id || record.ecg.length === 0;
 

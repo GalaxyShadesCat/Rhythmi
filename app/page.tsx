@@ -3,10 +3,11 @@ import { useHeartRateSensor } from "@/hooks/useHeartRateSensor";
 import HeartRateMonitor from "@/components/HeartRateMonitor";
 import ECGChart from "@/components/ECGChart";
 import UploadButton from "@/components/UploadButton";
-import { RecordData } from "@/hooks/useMongoDB";
+import { ActivitySegment, RecordData } from "@/hooks/useMongoDB";
 import UserPanel from "@/components/UserPanel";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import ActivitySegmentEditor from "@/components/ActivitySegmentEditor";
 
 export default function Home() {
   const {
@@ -15,6 +16,7 @@ export default function Home() {
     startECGStream,
     stopECGStream,
     heartRate,
+    heartRateData,
     ecgData,
     ecgHistory,
     error,
@@ -23,6 +25,9 @@ export default function Home() {
   } = useHeartRateSensor();
 
   const { user, saveUser, clearUser } = useLocalStorage();
+  const [activitySegments, setActivitySegments] = useState<ActivitySegment[]>(
+    []
+  );
 
   const record: RecordData | null = useMemo(() => {
     if (!user || !user._id || ecgHistory.length === 0) return null;
@@ -31,9 +36,10 @@ export default function Home() {
       user_id: user._id,
       datetime: new Date().toISOString(),
       ecg: ecgHistory,
-      activity_segments: [],
+      hr: heartRateData,
+      activity_segments: activitySegments,
     };
-  }, [user, ecgHistory]);
+  }, [user, ecgHistory, heartRateData, activitySegments]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-teal-100 p-8">
@@ -58,6 +64,12 @@ export default function Home() {
       <div className="max-w-4xl mx-auto mt-6">
         <UploadButton record={record} />
       </div>
+
+      <ActivitySegmentEditor
+        ecgData={ecgHistory}
+        segments={activitySegments}
+        setSegments={setActivitySegments}
+      />
     </div>
   );
 }

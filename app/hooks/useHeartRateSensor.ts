@@ -11,12 +11,18 @@ interface ECGDataPoint {
   value: number;
 }
 
+interface HRDataPoint {
+  timestamp: number;
+  value: number;
+}
+
 interface HeartRateSensorHook {
   connect: () => Promise<void>;
   disconnect: () => void;
   startECGStream: () => Promise<void>;
   stopECGStream: () => void;
   heartRate: number | null;
+  heartRateData: HRDataPoint[];
   ecgData: ECGDataPoint[];
   // ecgDataRef: React.MutableRefObject<ECGDataPoint[]>;
   ecgHistory: ECGDataPoint[]; // Complete ECG data
@@ -29,6 +35,7 @@ export function useHeartRateSensor(): HeartRateSensorHook {
   // State Management Section
   const [device, setDevice] = useState<BluetoothDevice | null>(null);
   const [heartRate, setHeartRate] = useState<number | null>(null);
+  const [heartRateData, setHeartRateData] = useState<HRDataPoint[]>([]);
   const [ecgData, setEcgData] = useState<ECGDataPoint[]>([]);
   // const ecgDataRef = useRef(ecgData);
   const [ecgHistory, setEcgHistory] = useState<ECGDataPoint[]>([]);
@@ -78,7 +85,15 @@ export function useHeartRateSensor(): HeartRateSensorHook {
           const value = (event.target as BluetoothRemoteGATTCharacteristic)
             .value;
           if (value) {
-            setHeartRate(parseHeartRate(value));
+            const hr = parseHeartRate(value);
+            setHeartRate(hr);
+
+            const hrPoint = {
+              timestamp: Date.now(),
+              value: hr,
+            };
+
+            setHeartRateData((prev) => [...prev, hrPoint]);
           }
         }
       );
@@ -196,6 +211,7 @@ export function useHeartRateSensor(): HeartRateSensorHook {
     startECGStream,
     stopECGStream,
     heartRate,
+    heartRateData,
     ecgData,
     ecgHistory,
     // ecgDataRef,
