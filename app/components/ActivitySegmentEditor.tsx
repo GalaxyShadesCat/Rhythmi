@@ -65,6 +65,11 @@ function ActivitySegmentEditor({
     });
   }
 
+  function isValidSegmentDuration(start: number, end: number): boolean {
+    const MIN_SEGMENT_DURATION = 5 * 1000; // 5 seconds in milliseconds
+    return end - start >= MIN_SEGMENT_DURATION;
+  }
+
   const isAddDisabled = () => {
     if (!startTime || !endTime || !ecgStart || !ecgEnd) return true;
 
@@ -109,6 +114,11 @@ function ActivitySegmentEditor({
 
     if (hasOverlap(startTs, endTs, segments, editIndex)) {
       alert("This segment overlaps with an existing one.");
+      return;
+    }
+
+    if (!isValidSegmentDuration(startTs, endTs)) {
+      alert("This segment is less than 5 seconds long.");
       return;
     }
 
