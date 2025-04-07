@@ -22,7 +22,6 @@ function ActivitySegmentEditor({
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [showInstructions, setShowInstructions] = useState(false);
 
   // ECG metadata
   const ecgStart = ecgData.length > 0 ? ecgData[0].timestamp : null;
@@ -156,34 +155,9 @@ function ActivitySegmentEditor({
     setSegments(updated);
   };
 
-  const instructions = [
-    "In order for accurate calibration of baseline ECG, please collect atleast 5 minutes of resting ECG sample.",
-  ];
-
   return (
-    <div className="bg-white p-6 rounded-lg shadow max-w-4xl mx-auto mt-8 relative">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Activity Annotation</h2>
-        <button
-          onClick={() => setShowInstructions(!showInstructions)}
-          className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors"
-          aria-label="Show instructions"
-        >
-          i
-        </button>
-      </div>
-
-      {showInstructions && (
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h3 className="font-medium text-blue-800 mb-2">Instructions:</h3>
-          <ul className="list-disc pl-5 space-y-1 text-sm text-blue-700">
-            {instructions.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
+    <div className="bg-white p-6 rounded-lg shadow max-w-4xl mx-auto mt-8">
+       <h2 className="text-xl font-semibold mb-4">Activity Annotation</h2>
       <div className="mb-4 text-sm text-gray-700">
         {ecgStart && ecgEnd ? (
           <p>
