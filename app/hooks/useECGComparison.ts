@@ -120,6 +120,8 @@ export function useECGComparison(
     };
   }, [baselineECG.length, currentECG.length, calculateHRRecovery, calculateSTDeviation, calculateHRVChange, calculateQTChange]);
 
+  // Main comparison effect
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     console.log(`Comparison - Baseline ECG length: ${baselineECG.length}, Current ECG length: ${currentECG.length}`);
     
@@ -128,7 +130,7 @@ export function useECGComparison(
       console.log("Not enough data for comparison");
       return;
     }
-
+    
     console.log("Baseline metrics:", baselineMetrics);
     console.log("Current metrics:", currentMetrics);
     
@@ -157,6 +159,7 @@ export function useECGComparison(
       hrvChange: hrvChange,
       qtChange: qtChange
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calculatedMetrics, baselineMetrics, currentMetrics]);
 
   return comparisonMetrics;

@@ -1,5 +1,3 @@
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
-
 // Constants for ECG analysis
 export const SAMPLING_RATE = 130; // 130 Hz
 export const ANALYSIS_WINDOW_SIZE = 5000; // 5000 samples (~38.5 seconds at 130Hz)
