@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -25,9 +25,16 @@ ChartJS.register(
 
 interface ECGChartProps {
   ecgData: ECGDataPoint[];
+  visibleDataPoints?: number;
 }
 
-const ECGChart: React.FC<ECGChartProps> = ({ ecgData }) => {
+const ECGChart: React.FC<ECGChartProps> = ({ 
+  ecgData,
+  visibleDataPoints = 500 
+}) => {
+  // Log the data received for debugging
+  console.log(`ECGChart received ${ecgData.length} data points`);
+  
   const formatTimestamp = (timestamp: number): string => {
     try {
       return new Date(timestamp).toISOString();
@@ -38,16 +45,21 @@ const ECGChart: React.FC<ECGChartProps> = ({ ecgData }) => {
     }
   };
 
+  // Limit the number of points to display
+  const visibleData = useMemo(() => {
+    return ecgData.slice(-visibleDataPoints);
+  }, [ecgData, visibleDataPoints]);
+  
+  console.log(`Rendering chart with ${visibleData.length} visible points`);
+
   const ecgChartData = {
-    labels: ecgData
-      .slice(-5000)
-      .map(
-        (point, index) => formatTimestamp(point.timestamp) || index.toString()
-      ),
+    labels: visibleData.map(
+      (point, index) => formatTimestamp(point.timestamp) || index.toString()
+    ),
     datasets: [
       {
         label: "ECG",
-        data: ecgData.slice(-5000).map((point) => point.value),
+        data: visibleData.map((point) => point.value),
         borderColor: "rgb(75, 192, 192)",
         backgroundColor: "rgba(75, 192, 192, 0.5)",
       },
