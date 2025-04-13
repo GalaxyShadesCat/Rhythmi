@@ -8,6 +8,7 @@ import UserPanel from "@/components/UserPanel";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useMemo, useState } from "react";
 import ActivitySegmentEditor from "@/components/ActivitySegmentEditor";
+import HRRDisplay from "@/components/HRRDisplay";
 
 export default function Home() {
   const {
@@ -64,6 +65,12 @@ export default function Home() {
       <div className="max-w-4xl mx-auto mt-6">
         <UploadButton record={record} />
       </div>
+
+      <HRRDisplay
+        isMonitoring={isECGStreaming}
+        historicalHR={heartRateData}
+        currentHR={heartRateData}
+      />
 
       <ActivitySegmentEditor
         ecgData={ecgHistory}
