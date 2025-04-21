@@ -8,6 +8,7 @@ import UserPanel from "@/components/UserPanel";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useMemo, useState, useEffect } from "react";
 import ActivitySegmentEditor from "@/components/ActivitySegmentEditor";
+import HRRDisplay from "@/components/HRRDisplay";
 
 // Import the ECG analysis hook for HR and HRV calculation
 import { useECGAnalysis } from "@/hooks/useECGAnalysis";
@@ -384,6 +385,12 @@ export default function Home() {
       <div className="max-w-4xl mx-auto mt-6">
         <UploadButton record={record} />
       </div>
+
+      <HRRDisplay
+        isMonitoring={isECGStreaming}
+        historicalHR={heartRateData}
+        currentHR={heartRateData}
+      />
 
       <ActivitySegmentEditor
         ecgData={ecgHistory}
