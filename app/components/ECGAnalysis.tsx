@@ -1,31 +1,22 @@
-import React from "react";
+import { useECGAnalysis } from "@/hooks/useECGAnalysis";
+import { ECGDataPoint, HRDataPoint } from "@/hooks/useHeartRateSensor";
 
-type ECGMetrics = {
-  heartRate: number;
-  heartRateVariability: number;
-  rPeaks: number[];
-  baselineHeartRate: number;
-  baselineTime: number | null;
-  exerciseStartTime: number | null;
-  peakHeartRate: number;
-  peakHeartRateTime: number | null;
-  recoveryStartTime: number | null;
-  recoveryTime: number | null;
-  recoveryStatus: "not-started" | "in-progress" | "completed";
-};
+function ECGAnalysis({
+  ecgData,
+  currentHR,
+  restHR,
+}: {
+  ecgData: ECGDataPoint[];
+  currentHR: number | null;
+  restHR: HRDataPoint[];
+}) {
+  const ecgMetrics = useECGAnalysis(ecgData, currentHR ?? 0, restHR);
 
-type Props = {
-  ecgMetrics: ECGMetrics;
-  setBaseline: () => void;
-};
-
-function ECGAnalysis({ ecgMetrics, setBaseline }: Props) {
-  // Format a timestamp as time string
   const formatTime = (timestamp: number | null): string => {
     if (timestamp === null) return "Not set";
     return new Date(timestamp).toLocaleTimeString();
   };
-  // Format recovery time in minutes and seconds
+
   const formatRecoveryTime = (ms: number | null): string => {
     if (ms === null) return "Not completed";
     const seconds = Math.floor(ms / 1000);
@@ -34,14 +25,6 @@ function ECGAnalysis({ ecgMetrics, setBaseline }: Props) {
     return `${minutes}m ${remainingSeconds}s`;
   };
 
-  // Handler to set current ECG data as baseline
-  const handleSetBaseline = () => {
-    console.log(
-      "Setting baseline with current heart rate:",
-      ecgMetrics.heartRate
-    );
-    setBaseline();
-  };
   return (
     <div className="bg-white p-6 rounded-lg shadow max-w-4xl mx-auto mt-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -63,13 +46,6 @@ function ECGAnalysis({ ecgMetrics, setBaseline }: Props) {
               <span className="font-medium">{ecgMetrics.rPeaks.length}</span>
             </div>
           </div>
-
-          <button
-            onClick={handleSetBaseline}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          >
-            Set as Baseline
-          </button>
         </div>
 
         {ecgMetrics.baselineTime !== null && (

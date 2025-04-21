@@ -28,13 +28,13 @@ interface ECGChartProps {
   visibleDataPoints?: number;
 }
 
-const ECGChart: React.FC<ECGChartProps> = ({ 
+const ECGChart: React.FC<ECGChartProps> = ({
   ecgData,
-  visibleDataPoints = 500 
+  visibleDataPoints = 500,
 }) => {
   // Log the data received for debugging
-  console.log(`ECGChart received ${ecgData.length} data points`);
-  
+  // console.log(`ECGChart received ${ecgData.length} data points`);
+
   const formatTimestamp = (timestamp: number): string => {
     try {
       return new Date(timestamp).toISOString();
@@ -49,8 +49,8 @@ const ECGChart: React.FC<ECGChartProps> = ({
   const visibleData = useMemo(() => {
     return ecgData.slice(-visibleDataPoints);
   }, [ecgData, visibleDataPoints]);
-  
-  console.log(`Rendering chart with ${visibleData.length} visible points`);
+
+  // console.log(`Rendering chart with ${visibleData.length} visible points`);
 
   const ecgChartData = {
     labels: visibleData.map(

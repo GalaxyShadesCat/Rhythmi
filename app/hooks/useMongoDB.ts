@@ -38,6 +38,8 @@ export interface RecordData {
   ecg: ECGPoint[];
   hr: HRPoint[];
   activity_segments: ActivitySegment[];
+  rest_ecg: ECGPoint[];
+  rest_hr: HRPoint[];
 }
 
 export function useMongoDB() {

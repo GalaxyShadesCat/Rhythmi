@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
+import { ECGDataPoint, HRDataPoint } from "@/hooks/useHeartRateSensor";
 
 // Define our own interface here to avoid circular dependencies
 export interface ECGMetrics {
@@ -18,12 +18,6 @@ export interface ECGMetrics {
   recoveryStatus: "not-started" | "in-progress" | "completed";
 }
 
-// Heart rate history point interface
-export interface HRHistoryPoint {
-  time: number;
-  value: number;
-}
-
 // Constants for analysis
 const SAMPLING_RATE = 130; // 130 Hz
 const MIN_RR_INTERVALS = 5; // Minimum number of RR intervals for valid HRV calculation
@@ -36,13 +30,15 @@ const HR_BASELINE_THRESHOLD = 2; // % difference from baseline to consider recov
 const MIN_HR_BPM = 40; // 40 BPM
 const MAX_HR_BPM = 220; // 220 BPM
 
-export function useECGAnalysis(ecgData: ECGDataPoint[]) {
+export function useECGAnalysis(
+  ecgData: ECGDataPoint[],
+  currentHR?: number,
+  restHR?: HRDataPoint[]
+) {
   const [metrics, setMetrics] = useState<ECGMetrics>({
     heartRate: 0,
     heartRateVariability: 0,
     rPeaks: [],
-
-    // Heart Rate Recovery tracking
     baselineTime: null,
     baselineHeartRate: 0,
     exerciseStartTime: null,
@@ -53,8 +49,30 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
     recoveryStatus: "not-started",
   });
 
-  // Track heart rate history for analysis and visualization
-  const [hrHistory, setHrHistory] = useState<HRHistoryPoint[]>([]);
+  // Set baseline heart rate from restHR if available
+  // This will be used to set the baseline heart rate for recovery analysis
+  useEffect(() => {
+    if (restHR != null && restHR.length > 0) {
+      const latest = restHR[restHR.length - 1];
+      setMetrics((prev) => ({
+        ...prev,
+        baselineHeartRate: latest.value,
+        baselineTime: latest.timestamp,
+        exerciseStartTime: null,
+        peakHeartRate: 0,
+        peakHeartRateTime: null,
+        recoveryStartTime: null,
+        recoveryTime: null,
+        recoveryStatus: "not-started",
+      }));
+
+      console.log(
+        `Baseline automatically set from restHR: ${
+          latest.value
+        } BPM at ${new Date(latest.timestamp).toLocaleTimeString()}`
+      );
+    }
+  }, [restHR]);
 
   // Enhanced peak detection with adaptive thresholding and signal pre-processing
   const findPeaks = useCallback((data: ECGDataPoint[]): number[] => {
@@ -83,16 +101,16 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
     const thresholdFactor = snr < 1.5 ? 2.5 : snr < 2.5 ? 2.0 : 1.5;
     const adaptiveThreshold = mean + thresholdFactor * stdDev;
 
-    console.log(
-      `Signal stats - Mean: ${mean.toFixed(2)}, StdDev: ${stdDev.toFixed(
-        2
-      )}, SNR: ${snr.toFixed(2)}`
-    );
-    console.log(
-      `Using threshold factor: ${thresholdFactor}, Threshold: ${adaptiveThreshold.toFixed(
-        2
-      )}`
-    );
+    // console.log(
+    //   `Signal stats - Mean: ${mean.toFixed(2)}, StdDev: ${stdDev.toFixed(
+    //     2
+    //   )}, SNR: ${snr.toFixed(2)}`
+    // );
+    // console.log(
+    //   `Using threshold factor: ${thresholdFactor}, Threshold: ${adaptiveThreshold.toFixed(
+    //     2
+    //   )}`
+    // );
 
     // Step 3: Find peaks with proper refractory period
     const peaks: number[] = [];
@@ -153,7 +171,7 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
       }
     }
 
-    console.log(`Found ${peaks.length} R-peaks in ECG data`);
+    // console.log(`Found ${peaks.length} R-peaks in ECG data`);
     return peaks;
   }, []);
 
@@ -223,24 +241,17 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
       squaredDiffs.reduce((sum, diff) => sum + diff, 0) / squaredDiffs.length;
     const rmssd = Math.sqrt(meanSquaredDiff);
 
-    console.log(
-      `Calculated HRV (RMSSD): ${rmssd.toFixed(2)} ms from ${
-        successiveDiffs.length
-      } intervals`
-    );
+    // console.log(
+    //   `Calculated HRV (RMSSD): ${rmssd.toFixed(2)} ms from ${
+    //     successiveDiffs.length
+    //   } intervals`
+    // );
     return rmssd;
   }, []);
 
   // Track heart rate changes for recovery monitoring
   const trackHeartRateChanges = useCallback(
     (currentHR: number, timestamp: number) => {
-      // Store current heart rate in history
-      setHrHistory((prev) => {
-        const newHistory = [...prev, { time: timestamp, value: currentHR }];
-        // Keep only the last 100 measurements
-        return newHistory.slice(-100);
-      });
-
       // Update metrics based on current heart rate and history
       setMetrics((prevMetrics) => {
         // Don't process if heart rate is 0 (no valid measurement)
@@ -264,11 +275,11 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
                 newMetrics.baselineHeartRate) *
               100;
             if (hrIncrease >= HR_RISE_THRESHOLD) {
-              console.log(
-                `Exercise started: HR increased by ${hrIncrease.toFixed(
-                  1
-                )}% above baseline`
-              );
+              // console.log(
+              //   `Exercise started: HR increased by ${hrIncrease.toFixed(
+              //     1
+              //   )}% above baseline`
+              // );
               newMetrics.exerciseStartTime = now;
               newMetrics.recoveryStatus = "not-started";
             }
@@ -295,11 +306,11 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
                     newMetrics.peakHeartRate) *
                   100;
                 if (hrDecrease >= HR_RECOVERY_THRESHOLD) {
-                  console.log(
-                    `Recovery started: HR decreased by ${hrDecrease.toFixed(
-                      1
-                    )}% from peak`
-                  );
+                  // console.log(
+                  //   `Recovery started: HR decreased by ${hrDecrease.toFixed(
+                  //     1
+                  //   )}% from peak`
+                  // );
                   newMetrics.recoveryStartTime = now;
                   newMetrics.recoveryStatus = "in-progress";
                 }
@@ -319,11 +330,11 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
               if (diffFromBaseline <= HR_BASELINE_THRESHOLD) {
                 const recoveryTimeMs =
                   now - (newMetrics.recoveryStartTime || now);
-                console.log(
-                  `Recovery completed in ${(recoveryTimeMs / 1000).toFixed(
-                    1
-                  )} seconds`
-                );
+                // console.log(
+                //   `Recovery completed in ${(recoveryTimeMs / 1000).toFixed(
+                //     1
+                //   )} seconds`
+                // );
                 newMetrics.recoveryTime = recoveryTimeMs;
                 newMetrics.recoveryStatus = "completed";
               }
@@ -337,31 +348,11 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
     []
   );
 
-  // Set baseline heart rate and timestamp
-  const setBaseline = useCallback((hr: number, timestamp: number) => {
-    setMetrics((prev) => ({
-      ...prev,
-      baselineHeartRate: hr,
-      baselineTime: timestamp,
-      exerciseStartTime: null,
-      peakHeartRate: 0,
-      peakHeartRateTime: null,
-      recoveryStartTime: null,
-      recoveryTime: null,
-      recoveryStatus: "not-started",
-    }));
-    console.log(
-      `Set baseline heart rate: ${hr} BPM at ${new Date(
-        timestamp
-      ).toLocaleTimeString()}`
-    );
-  }, []);
-
   // Main analysis effect
   useEffect(() => {
     // Ensure we have enough data for analysis
     if (ecgData.length < 50) {
-      console.log("Not enough ECG data for analysis");
+      // console.log("Not enough ECG data for analysis");
       return;
     }
 
@@ -372,8 +363,7 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
     // Find R peaks in the current window
     const detectedPeaks = findPeaks(windowData);
 
-    // Calculate heart rate and HRV
-    const currentHR = calculateHeartRate(detectedPeaks);
+    // Calculate HRV
     const currentHRV = calculateHRV(detectedPeaks);
 
     // Get latest timestamp
@@ -381,31 +371,34 @@ export function useECGAnalysis(ecgData: ECGDataPoint[]) {
       windowData[windowData.length - 1]?.timestamp || Date.now();
 
     // Track heart rate changes for recovery analysis
-    if (currentHR > 0) {
+    if (currentHR != undefined) {
       trackHeartRateChanges(currentHR, latestTimestamp);
+      // Update metrics
+      setMetrics((prev) => ({
+        ...prev,
+        heartRate: currentHR,
+        heartRateVariability: currentHRV,
+        rPeaks: detectedPeaks,
+      }));
+    } else {
+      // If not in full analysis mode, just update heart rate and HRV
+      const heartRate = calculateHeartRate(detectedPeaks);
+      setMetrics((prev) => ({
+        ...prev,
+        heartRate: heartRate,
+        heartRateVariability: currentHRV,
+        rPeaks: detectedPeaks,
+      }));
     }
-
-    // Update metrics
-    setMetrics((prev) => ({
-      ...prev,
-      heartRate: currentHR,
-      heartRateVariability: currentHRV,
-      rPeaks: detectedPeaks,
-    }));
   }, [
     ecgData,
+    currentHR,
     findPeaks,
     calculateHeartRate,
     calculateHRV,
     trackHeartRateChanges,
   ]);
 
-  // Return the metrics, hrHistory and setBaseline function
-  return {
-    metrics,
-    hrHistory, // Include heart rate history in the return value
-    setBaseline: (timestamp = Date.now()) =>
-      setBaseline(metrics.heartRate, timestamp),
-  };
+  return metrics;
 }
 export default useECGAnalysis;

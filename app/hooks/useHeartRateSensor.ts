@@ -21,11 +21,10 @@ interface HeartRateSensorHook {
   disconnect: () => void;
   startECGStream: () => Promise<void>;
   stopECGStream: () => void;
-  heartRate: number | null;
-  heartRateData: HRDataPoint[];
-  ecgData: ECGDataPoint[];
-  // ecgDataRef: React.MutableRefObject<ECGDataPoint[]>;
+  currentECG: ECGDataPoint[]; // Current ECG data (last 1000 points)
   ecgHistory: ECGDataPoint[]; // Complete ECG data
+  currentHR: number | null;
+  hrHistory: HRDataPoint[]; // Complete heart rate data
   error: string | null;
   isConnected: boolean;
   isECGStreaming: boolean;
@@ -34,11 +33,10 @@ interface HeartRateSensorHook {
 export function useHeartRateSensor(): HeartRateSensorHook {
   // State Management Section
   const [device, setDevice] = useState<BluetoothDevice | null>(null);
-  const [heartRate, setHeartRate] = useState<number | null>(null);
-  const [heartRateData, setHeartRateData] = useState<HRDataPoint[]>([]);
-  const [ecgData, setEcgData] = useState<ECGDataPoint[]>([]);
-  // const ecgDataRef = useRef(ecgData);
+  const [currentECG, setCurrentECG] = useState<ECGDataPoint[]>([]);
   const [ecgHistory, setEcgHistory] = useState<ECGDataPoint[]>([]);
+  const [currentHR, setCurrentHR] = useState<number | null>(null);
+  const [hrHistory, setHRHistory] = useState<HRDataPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isECGStreaming, setIsECGStreaming] = useState<boolean>(false);
@@ -46,11 +44,6 @@ export function useHeartRateSensor(): HeartRateSensorHook {
     useState<BluetoothRemoteGATTCharacteristic | null>(null);
   const [pmdDataCharacteristic, setPmdDataCharacteristic] =
     useState<BluetoothRemoteGATTCharacteristic | null>(null);
-
-  // Sync ecgDataRef with ecgData
-  // useEffect(() => {
-  //   ecgDataRef.current = ecgData;
-  // }, [ecgData]);
 
   // Connection Management
   const connect = useCallback(async () => {
@@ -68,7 +61,7 @@ export function useHeartRateSensor(): HeartRateSensorHook {
 
       device.addEventListener("gattserverdisconnected", () => {
         setIsConnected(false);
-        setHeartRate(null);
+        setCurrentHR(null);
         setIsECGStreaming(false);
       });
 
@@ -86,14 +79,14 @@ export function useHeartRateSensor(): HeartRateSensorHook {
             .value;
           if (value) {
             const hr = parseHeartRate(value);
-            setHeartRate(hr);
+            setCurrentHR(hr);
 
             const hrPoint = {
               timestamp: Date.now(),
               value: hr,
             };
 
-            setHeartRateData((prev) => [...prev, hrPoint]);
+            setHRHistory((prev) => [...prev, hrPoint]);
           }
         }
       );
@@ -125,12 +118,12 @@ export function useHeartRateSensor(): HeartRateSensorHook {
       device.gatt.disconnect();
     }
     setDevice(null);
-    setHeartRate(null);
+    setCurrentHR(null);
     setIsConnected(false);
     setIsECGStreaming(false);
     setPmdControlCharacteristic(null);
     setPmdDataCharacteristic(null);
-    setEcgData([]);
+    setCurrentECG([]);
   }, [device]);
 
   // ECG Stream Control
@@ -170,7 +163,7 @@ export function useHeartRateSensor(): HeartRateSensorHook {
               value: sample,
             }));
 
-            setEcgData((prev) => [...prev, ...newEcgData].slice(-1000)); // Keep last 1000 points
+            setCurrentECG((prev) => [...prev, ...newEcgData].slice(-1000)); // Keep last 1000 points
             setEcgHistory((prev) => [...prev, ...newEcgData]);
           }
         }
@@ -191,12 +184,8 @@ export function useHeartRateSensor(): HeartRateSensorHook {
       await pmdDataCharacteristic.stopNotifications();
     }
     setIsECGStreaming(false);
-    setEcgData([]);
+    setCurrentECG([]);
   }, [pmdDataCharacteristic]);
-
-  // Remove unused handlers:
-  // - handleHeartRateUpdate
-  // - handleECGData
 
   // Effects & Cleanup
   useEffect(() => {
@@ -210,11 +199,10 @@ export function useHeartRateSensor(): HeartRateSensorHook {
     disconnect,
     startECGStream,
     stopECGStream,
-    heartRate,
-    heartRateData,
-    ecgData,
+    currentHR,
+    hrHistory,
+    currentECG,
     ecgHistory,
-    // ecgDataRef,
     error,
     isConnected,
     isECGStreaming,
@@ -251,4 +239,4 @@ function parseECGData(value: DataView): { samples: number[] } {
   return { samples };
 }
 
-export type { ECGDataPoint };
+export type { ECGDataPoint, HRDataPoint };

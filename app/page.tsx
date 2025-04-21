@@ -1,17 +1,20 @@
 "use client";
-import { ECGDataPoint, useHeartRateSensor } from "@/hooks/useHeartRateSensor";
+import {
+  ECGDataPoint,
+  HRDataPoint,
+  useHeartRateSensor,
+} from "@/hooks/useHeartRateSensor";
 import HeartRateMonitor from "@/components/HeartRateMonitor";
 import UploadButton from "@/components/UploadButton";
 import { ActivitySegment, RecordData } from "@/hooks/useMongoDB";
 import UserPanel from "@/components/UserPanel";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import ActivitySegmentEditor from "@/components/ActivitySegmentEditor";
 import HRRDisplay from "@/components/HRRDisplay";
-import Calibration from "@/app/components/ECGCalibration";
+import ECGCalibration from "@/app/components/ECGCalibration";
 import useTestMode from "@/hooks/useTestMode";
 import ECGAnalysis from "@/components/ECGAnalysis";
-import useECGAnalysis from "@/hooks/useECGAnalysis";
 import ECGChartPanel from "@/components/ECGChartPanel";
 import TestModePanel from "@/components/TestModePanel";
 
@@ -21,9 +24,9 @@ export default function Home() {
     disconnect,
     startECGStream,
     stopECGStream,
-    heartRate,
-    heartRateData,
-    ecgData,
+    currentHR,
+    hrHistory,
+    currentECG,
     ecgHistory,
     error,
     isConnected,
@@ -34,29 +37,15 @@ export default function Home() {
   const [activitySegments, setActivitySegments] = useState<ActivitySegment[]>(
     []
   );
-  const [calibrationData, setCalibrationData] = useState<ECGDataPoint[]>([]);
-
+  const [restECG, setRestECG] = useState<ECGDataPoint[]>([]);
+  const [restHR, setRestHR] = useState<HRDataPoint[]>([]);
   const {
     isTestMode,
     isChartPaused,
     toggleTestMode,
     togglePauseChart,
     displayEcgData,
-    testEcgData,
-  } = useTestMode(ecgData);
-
-  // ECG metrics
-  const { metrics: ecgMetrics, setBaseline } = useECGAnalysis(
-    isTestMode ? testEcgData : ecgData
-  );
-
-  // Add debug logging for ECG data
-  useEffect(() => {
-    if (isECGStreaming) {
-      console.log(`Actual ECG data length: ${ecgData.length}`);
-      console.log(`Display ECG data length: ${displayEcgData.length}`);
-    }
-  }, [isECGStreaming, ecgData.length, displayEcgData.length]);
+  } = useTestMode(currentECG);
 
   const record: RecordData | null = useMemo(() => {
     if (!user || !user._id || ecgHistory.length === 0) return null;
@@ -65,15 +54,12 @@ export default function Home() {
       user_id: user._id,
       datetime: new Date().toISOString(),
       ecg: ecgHistory,
-      hr: heartRateData,
+      hr: hrHistory,
       activity_segments: activitySegments,
-      calibration_data: calibrationData,
+      rest_ecg: restECG,
+      rest_hr: restHR,
     };
-  }, [user, ecgHistory, heartRateData, activitySegments, calibrationData]);
-
-  const handleSaveCalibration = (sample: ECGDataPoint[]) => {
-    setCalibrationData(sample);
-  };
+  }, [user, ecgHistory, hrHistory, activitySegments, restECG, restHR]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-teal-100 p-8 text-black">
@@ -86,7 +72,7 @@ export default function Home() {
         startECGStream={startECGStream}
         stopECGStream={stopECGStream}
         error={error}
-        heartRate={heartRate}
+        heartRate={currentHR}
       />
 
       <TestModePanel
@@ -101,7 +87,11 @@ export default function Home() {
             isPaused={isChartPaused}
             onTogglePause={togglePauseChart}
           />
-          <ECGAnalysis ecgMetrics={ecgMetrics} setBaseline={setBaseline} />
+          <ECGAnalysis
+            ecgData={currentECG}
+            currentHR={currentHR}
+            restHR={restHR}
+          />
         </>
       )}
 
@@ -109,15 +99,14 @@ export default function Home() {
         <UploadButton record={record} />
       </div>
 
-      <HRRDisplay
-        isMonitoring={isECGStreaming}
-        historicalHR={heartRateData}
-        currentHR={heartRateData}
-      />
+      <HRRDisplay isConnected={isConnected} hrHistory={hrHistory} />
 
-      <Calibration
+      <ECGCalibration
+        isECGStreaming={isECGStreaming}
         ecgData={ecgHistory}
-        onSaveCalibration={handleSaveCalibration}
+        heartRateData={hrHistory}
+        onRestECGUpdate={setRestECG}
+        onRestHeartRateUpdate={setRestHR}
       />
 
       <ActivitySegmentEditor

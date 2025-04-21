@@ -1,32 +1,56 @@
-// components/Calibration.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
+import { useState, useEffect, useRef } from "react";
+import { ECGDataPoint, HRDataPoint } from "@/hooks/useHeartRateSensor";
 
 type QualityRating = "excellent" | "good" | "fair" | "poor";
 
 interface CalibrationProps {
+  isECGStreaming: boolean;
   ecgData: ECGDataPoint[];
-  onSaveCalibration: (sample: ECGDataPoint[]) => void;
+  heartRateData: HRDataPoint[];
+  onRestECGUpdate: (data: ECGDataPoint[]) => void;
+  onRestHeartRateUpdate: (data: HRDataPoint[]) => void;
 }
 
-export default function Calibration({ ecgData, onSaveCalibration }: CalibrationProps) {
+export default function ECGCalibration({
+  // isECGStreaming,
+  ecgData,
+  heartRateData,
+  onRestECGUpdate,
+  onRestHeartRateUpdate,
+}: CalibrationProps) {
   const [isCalibrating, setIsCalibrating] = useState(false);
-  const [calibrationStartTime, setCalibrationStartTime] = useState<number | null>(null);
-  const [calibrationDuration, setCalibrationDuration] = useState(0);
-  const [calibrationData, setCalibrationData] = useState<ECGDataPoint[]>([]);
+  const [calibrationStartTime, setCalibrationStartTime] = useState<
+    number | null
+  >(null);
+  const [restDuration, setRestDuration] = useState(0);
+  const [restECGData, setRestECGData] = useState<ECGDataPoint[]>([]);
+  const [restHeartRateData, setRestHeartRateData] = useState<HRDataPoint[]>([]);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [qualityRating, setQualityRating] = useState<QualityRating | null>(null);
+  const [qualityRating, setQualityRating] = useState<QualityRating | null>(
+    null
+  );
+
+  const ecgDataRef = useRef<ECGDataPoint[]>([]);
+  useEffect(() => {
+    ecgDataRef.current = ecgData;
+  }, [ecgData]);
+
+  const heartRateDataRef = useRef<HRDataPoint[]>([]);
+  useEffect(() => {
+    heartRateDataRef.current = heartRateData;
+  }, [heartRateData]);
 
   const calculateSignalQuality = (data: ECGDataPoint[]): QualityRating => {
-    const values = data.map(point => point.value);
+    const values = data.map((point) => point.value);
     if (values.length === 0) return "poor";
 
     // Calculate standard deviation
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-    const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
-    const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
+    const squaredDiffs = values.map((val) => Math.pow(val - mean, 2));
+    const variance =
+      squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
     const standardDeviation = Math.sqrt(variance);
 
     if (standardDeviation < 0.1) return "excellent";
@@ -37,51 +61,71 @@ export default function Calibration({ ecgData, onSaveCalibration }: CalibrationP
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    
-    if (isCalibrating) {
-      setCalibrationData([]);
-      setCalibrationStartTime(Date.now());
-      setQualityRating(null);
-      
+
+    if (isCalibrating && calibrationStartTime !== null) {
+      console.log("Starting ECG calibration...");
       interval = setInterval(() => {
         const now = Date.now();
-        setCalibrationDuration(Math.floor((now - (calibrationStartTime || now)) / 1000));
-        
-        if (calibrationStartTime) {
-          const newData = ecgData.filter(point => point.timestamp >= calibrationStartTime);
-          setCalibrationData(newData);
-        }
+        const duration = Math.floor((now - calibrationStartTime) / 1000);
+        setRestDuration(duration);
+
+        setRestECGData(
+          ecgDataRef.current.filter(
+            (point) => point.timestamp >= calibrationStartTime
+          )
+        );
+        setRestHeartRateData(
+          heartRateDataRef.current.filter(
+            (point) => point.timestamp >= calibrationStartTime
+          )
+        );
       }, 1000);
     }
-    
-    return () => clearInterval(interval);
-  }, [isCalibrating, calibrationStartTime, ecgData]);
 
-  const startCalibration = () => setIsCalibrating(true);
+    return () => clearInterval(interval);
+  }, [isCalibrating, calibrationStartTime]);
+
+  const startCalibration = () => {
+    const now = Date.now();
+    setCalibrationStartTime(now);
+    setRestECGData([]);
+    setRestHeartRateData([]);
+    setQualityRating(null);
+    setRestDuration(0);
+    setIsCalibrating(true);
+  };
 
   const stopCalibration = () => {
     setIsCalibrating(false);
-    if (calibrationData.length > 0) {
-      const rating = calculateSignalQuality(calibrationData);
+    if (restECGData.length > 0) {
+      const rating = calculateSignalQuality(restECGData);
       setQualityRating(rating);
-      onSaveCalibration(calibrationData);
+      onRestECGUpdate(restECGData);
+      onRestHeartRateUpdate(restHeartRateData);
     }
-    setCalibrationDuration(0);
+    setRestDuration(0);
   };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   const getQualityColor = (rating: QualityRating) => {
     switch (rating) {
-      case "excellent": return "bg-green-100 text-green-800";
-      case "good": return "bg-blue-100 text-blue-800";
-      case "fair": return "bg-yellow-100 text-yellow-800";
-      case "poor": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "excellent":
+        return "bg-green-100 text-green-800";
+      case "good":
+        return "bg-blue-100 text-blue-800";
+      case "fair":
+        return "bg-yellow-100 text-yellow-800";
+      case "poor":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -97,7 +141,7 @@ export default function Calibration({ ecgData, onSaveCalibration }: CalibrationP
       <h2 className="text-xl font-semibold mb-4 text-gray-800">
         ECG Calibration
       </h2>
-      
+
       <div className="flex justify-between items-center mb-4">
         <button
           onClick={() => setShowInstructions(!showInstructions)}
@@ -123,7 +167,9 @@ export default function Calibration({ ecgData, onSaveCalibration }: CalibrationP
         <button
           onClick={isCalibrating ? stopCalibration : startCalibration}
           className={`px-6 py-2 rounded-full text-white font-medium ${
-            isCalibrating ? "bg-red-500 hover:bg-red-600" : "bg-blue-500 hover:bg-blue-600"
+            isCalibrating
+              ? "bg-red-500 hover:bg-red-600"
+              : "bg-blue-500 hover:bg-blue-600"
           }`}
         >
           {isCalibrating ? "Stop Calibration" : "Start Calibration"}
@@ -132,17 +178,17 @@ export default function Calibration({ ecgData, onSaveCalibration }: CalibrationP
 
       {isCalibrating && (
         <div className="flex items-center gap-4 mb-4">
-          <div className={`text-2xl font-bold ${
-            calibrationDuration >= 300 ? "text-green-600" : "text-red-600"
-          }`}>
-            {formatTime(calibrationDuration)}
+          <div
+            className={`text-2xl font-bold ${
+              restDuration >= 300 ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {formatTime(restDuration)}
           </div>
           <div className="text-gray-600">
-            {calibrationDuration >= 300 ? (
-              "✅ 5 minutes collected - ready for calibration"
-            ) : (
-              "⏳ Collecting resting ECG data..."
-            )}
+            {restDuration >= 300
+              ? "✅ 5 minutes collected - ready for calibration"
+              : "⏳ Collecting resting ECG data..."}
           </div>
         </div>
       )}
@@ -152,13 +198,19 @@ export default function Calibration({ ecgData, onSaveCalibration }: CalibrationP
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-gray-600">State</p>
-            <p className={isCalibrating ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+            <p
+              className={
+                isCalibrating
+                  ? "text-green-600 font-medium"
+                  : "text-red-600 font-medium"
+              }
+            >
               {isCalibrating ? "Active" : "Inactive"}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600">Data Points</p>
-            <p>{calibrationData.length}</p>
+            <p>{restECGData.length}</p>
           </div>
         </div>
       </div>
@@ -170,10 +222,14 @@ export default function Calibration({ ecgData, onSaveCalibration }: CalibrationP
             {qualityRating.charAt(0).toUpperCase() + qualityRating.slice(1)}
           </p>
           <p className="text-sm mt-1">
-            {qualityRating === "excellent" && "Perfect signal quality - ready for use"}
-            {qualityRating === "good" && "Good signal quality - suitable for use"}
-            {qualityRating === "fair" && "Moderate signal quality - consider recalibrating"}
-            {qualityRating === "poor" && "Poor signal quality - check connections and recalibrate"}
+            {qualityRating === "excellent" &&
+              "Perfect signal quality - ready for use"}
+            {qualityRating === "good" &&
+              "Good signal quality - suitable for use"}
+            {qualityRating === "fair" &&
+              "Moderate signal quality - consider recalibrating"}
+            {qualityRating === "poor" &&
+              "Poor signal quality - check connections and recalibrate"}
           </p>
         </div>
       )}

@@ -3,7 +3,7 @@ import { getDb } from "@/lib/mongodb";
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { user_id, datetime, ecg, hr, activity_segments, calibration_data } =
+  const { user_id, datetime, ecg, hr, activity_segments, rest_ecg, rest_hr } =
     body;
 
   if (
@@ -12,7 +12,8 @@ export async function POST(req: Request) {
     !ecg ||
     !hr ||
     !activity_segments ||
-    !calibration_data
+    !rest_ecg ||
+    !rest_hr
   ) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
@@ -26,7 +27,8 @@ export async function POST(req: Request) {
     ecg,
     hr,
     activity_segments,
-    calibration_data,
+    rest_ecg,
+    rest_hr,
   });
 
   return NextResponse.json({ insertedId: result.insertedId }, { status: 201 });
