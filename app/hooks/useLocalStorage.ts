@@ -41,3 +41,4 @@ export function useLocalStorage() {
     clearUser, // function to remove user
   };
 }
+export default useLocalStorage;

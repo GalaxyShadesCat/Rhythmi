@@ -100,7 +100,7 @@ export default function HRRDisplay({
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-6 p-4 bg-white rounded-lg shadow-md">
+    <div className="bg-white p-6 rounded-lg shadow max-w-4xl mx-auto mt-8">
       <h2 className="text-xl font-semibold mb-4 text-gray-800">
         Heart Rate Recovery (HRR)
       </h2>
