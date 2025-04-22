@@ -33,24 +33,27 @@ function findClosestHR(
   );
 }
 
-type HRRDisplayProps = {
+type HeartRateRecoveryProps = {
   isConnected: boolean;
   hrHistory: HRDataPoint[];
 };
 
-export default function HRRDisplay({
+export default function HeartRateRecovery({
   isConnected,
   hrHistory,
-}: HRRDisplayProps) {
+}: HeartRateRecoveryProps) {
   const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
   const [exerciseEndTimestamp, setExerciseEndTimestamp] = useState<
     number | null
   >(null);
   const [peakHR, setPeakHR] = useState<number>(0);
-  const [recoveryHR, setRecoveryHR] = useState<number | null>(null);
+
+  const [recordedHRs, setRecordedHRs] = useState<HRDataPoint[]>([]);
+  const recoveryHR = recordedHRs[0]?.value ?? null;
 
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const chartData = useMemo(() => {
     if (!startTimestamp) return [];
@@ -66,6 +69,34 @@ export default function HRRDisplay({
         value: p.value,
       }));
   }, [hrHistory, startTimestamp, exerciseEndTimestamp]);
+
+  // Start 30s interval to record HR post-exercise
+  useEffect(() => {
+    if (!exerciseEndTimestamp) return;
+
+    intervalRef.current = setInterval(() => {
+      const now = Date.now();
+      const closest = findClosestHR(hrHistory, now);
+      if (closest) {
+        setRecordedHRs((prev) => {
+          const newRecord = {
+            timestamp: closest.timestamp,
+            value: closest.value,
+          };
+          if (prev.length < 10) {
+            return [...prev, newRecord];
+          } else {
+            clearInterval(intervalRef.current!);
+            return prev;
+          }
+        });
+      }
+    }, 30000); // every 30 seconds
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [exerciseEndTimestamp, hrHistory]);
 
   useEffect(() => {
     if (!isConnected || !startTimestamp) return;
@@ -85,24 +116,7 @@ export default function HRRDisplay({
     if (avg > peakHR) {
       setPeakHR(Math.round(avg));
     }
-
-    if (exerciseEndTimestamp && recoveryHR === null) {
-      const targetTime = exerciseEndTimestamp + 60000;
-      if (now >= targetTime) {
-        const recoveryPoint = findClosestHR(hrHistory, targetTime);
-        if (recoveryPoint) {
-          setRecoveryHR(recoveryPoint.value);
-        }
-      }
-    }
-  }, [
-    hrHistory,
-    isConnected,
-    startTimestamp,
-    exerciseEndTimestamp,
-    peakHR,
-    recoveryHR,
-  ]);
+  }, [hrHistory, isConnected, startTimestamp, exerciseEndTimestamp, peakHR]);
 
   const hrr = useMemo(() => {
     if (peakHR && recoveryHR !== null) {
@@ -120,7 +134,7 @@ export default function HRRDisplay({
         setStartTimestamp(latest.timestamp);
         setExerciseEndTimestamp(null);
         setPeakHR(0);
-        setRecoveryHR(null);
+        setRecordedHRs([]);
       }
     } else if (!exerciseEndTimestamp) {
       setExerciseEndTimestamp(now);
@@ -128,11 +142,11 @@ export default function HRRDisplay({
       setStartTimestamp(null);
       setExerciseEndTimestamp(null);
       setPeakHR(0);
-      setRecoveryHR(null);
+      setRecordedHRs([]);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     }
   };
 
-  // Render Chart.js
   useEffect(() => {
     if (!chartRef.current) return;
 
@@ -214,7 +228,7 @@ export default function HRRDisplay({
               (recoveryHR !== null ? (
                 <>
                   <p>
-                    🧘 <strong>HR after 60s:</strong> {recoveryHR} bpm
+                    🧘 <strong>HR after 30s:</strong> {recoveryHR} bpm
                   </p>
                   <p>
                     🔻 <strong>HRR:</strong> {hrr?.toFixed(2)} bpm
@@ -222,13 +236,29 @@ export default function HRRDisplay({
                 </>
               ) : (
                 <p className="text-sm text-gray-500">
-                  ⏳ Waiting 60 seconds after exercise to calculate recovery
+                  ⏳ Waiting 30 seconds after exercise to calculate recovery
                   HR...
                 </p>
               ))}
           </>
         )}
       </div>
+
+      {recordedHRs.length > 0 && (
+        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+          <h3 className="font-medium mb-2 text-gray-800">
+            📋 Recorded HR every 30s
+          </h3>
+          <ul className="text-sm text-gray-700 space-y-1">
+            {recordedHRs.map((entry, i) => (
+              <li key={i}>
+                {new Date(entry.timestamp).toLocaleTimeString()} — {entry.value}{" "}
+                bpm
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="bg-gray-100 rounded-lg p-4">
         <h3 className="text-gray-800 font-medium mb-2">Live HR Chart</h3>
