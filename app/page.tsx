@@ -37,6 +37,7 @@ import Login from "@/components/Login";
 import HealthChatbot from "@/components/HealthChatbot";
 import useTestMode from "@/hooks/useTestMode";
 import useLocalStorage from "@/hooks/useLocalStorage";
+import FetchHistory from "@/components/FetchHistory";
 
 export default function Home() {
   const { user, saveUser, clearUser } = useLocalStorage();
@@ -95,9 +96,12 @@ export default function Home() {
       // Records tab
       case 0:
         return (
-          <Typography variant="h6" mt={3}>
-            Records Placeholder
-          </Typography>
+          <Box>
+            <Typography variant="h6" mt={3}>
+              Your Records
+            </Typography>
+            <FetchHistory />
+          </Box>
         );
       // New Record tab
       case 1:
