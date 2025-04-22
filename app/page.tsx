@@ -9,12 +9,15 @@ import {
   Box,
   Paper,
   Typography,
+  Fab,
+  Slide,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import LogoutIcon from "@mui/icons-material/Logout";
 import UploadIcon from "@mui/icons-material/Upload";
 import ArticleIcon from "@mui/icons-material/Article";
 import PersonIcon from "@mui/icons-material/Person";
+import ChatIcon from "@mui/icons-material/Chat";
 
 import {
   ECGDataPoint,
@@ -31,6 +34,7 @@ import ECGAnalysis from "@/components/ECGAnalysis";
 import ECGChartPanel from "@/components/ECGChartPanel";
 import TestModePanel from "@/components/TestModePanel";
 import Login from "@/components/Login";
+import HealthChatbot from "@/components/HealthChatbot";
 import useTestMode from "@/hooks/useTestMode";
 import useLocalStorage from "@/hooks/useLocalStorage";
 
@@ -77,6 +81,8 @@ export default function Home() {
       rest_hr: restHR,
     };
   }, [user, ecgHistory, hrHistory, activitySegments, restECG, restHR]);
+
+  const [openChat, setOpenChat] = useState(false);
 
   // Show login if not logged in
   if (!user) {
@@ -202,6 +208,44 @@ export default function Home() {
           <BottomNavigationAction label="Profile" icon={<PersonIcon />} />
         </BottomNavigation>
       </Paper>
+
+      {/* Floating Chat Button */}
+      <Fab
+        color="primary"
+        onClick={() => setOpenChat((prev) => !prev)}
+        sx={{
+          position: "fixed",
+          bottom: 80,
+          right: 16,
+          bgcolor: "#7B61FF",
+          "&:hover": { bgcolor: "#6249db" },
+        }}
+      >
+        <ChatIcon />
+      </Fab>
+
+      <Slide direction="up" in={openChat} mountOnEnter>
+        <Box
+          sx={{
+            position: "fixed",
+            zIndex: 1300,
+            bgcolor: "#fff",
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: 6,
+            borderRadius: { xs: 0, sm: 2 },
+            overflow: "hidden",
+            top: { xs: 0, sm: "auto" },
+            left: { xs: 0, sm: "auto" },
+            right: { xs: 0, sm: 24 },
+            bottom: { xs: 0, sm: 150 },
+            width: { xs: "100%", sm: 400, md: 420 },
+            height: { xs: "100%", sm: 600, md: 700 },
+          }}
+        >
+          <HealthChatbot user={user} setOpenChat={setOpenChat} />
+        </Box>
+      </Slide>
     </Box>
   );
 }
