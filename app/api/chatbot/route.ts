@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://rhythmi.vercel.app/",
-        "X-Title": "Health Insights Assistant",
+        "X-Title": "Rhythmi",
       },
       body: JSON.stringify({
         model: "microsoft/mai-ds-r1:free",
