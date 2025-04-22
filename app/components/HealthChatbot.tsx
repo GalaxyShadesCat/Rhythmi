@@ -106,11 +106,24 @@ function HealthChatbot({ user, setOpenChat }: HealthChatbotProps) {
     setInput("");
     setLoading(true);
 
+    const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+    if (!OPENROUTER_API_KEY) {
+      console.error("Missing OpenRouter API key");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch("/api/chatbot", {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ` + OPENROUTER_API_KEY,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://rhythmi.vercel.app/",
+          "X-Title": "Rhythmi",
+        },
         body: JSON.stringify({
+          model: "microsoft/mai-ds-r1:free",
           messages: [SYSTEM_PROMPT.current, ...updatedMessages.slice(-10)],
         }),
       });
