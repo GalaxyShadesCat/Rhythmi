@@ -239,8 +239,8 @@ export default function Home() {
             left: { xs: 0, sm: "auto" },
             right: { xs: 0, sm: 24 },
             bottom: { xs: 0, sm: 150 },
-            width: { xs: "100%", sm: 400, md: 420 },
-            height: { xs: "100%", sm: 600, md: 700 },
+            width: { xs: "100%", sm: 400 },
+            height: { xs: "100%", sm: 550 },
           }}
         >
           <HealthChatbot user={user} setOpenChat={setOpenChat} />
