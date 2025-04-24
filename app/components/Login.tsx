@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -23,6 +23,7 @@ type LoginProps = {
 };
 
 export default function Login({ user, saveUser, clearUser }: LoginProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const {
     createUser,
     getUserByUsername,
@@ -34,12 +35,15 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
   } = useMongoDB();
 
   const [mode, setMode] = useState<"login" | "create">("login");
-
   const [formData, setFormData] = useState<Omit<User, "_id">>({
     user_name: "",
     birth_year: new Date().getFullYear(),
     gender: "other",
   });
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleTextChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -75,6 +79,10 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
       if (existingUser) saveUser(existingUser);
     }
   };
+
+  if (!isMounted) {
+    return null; // Return nothing during SSR
+  }
 
   if (user) {
     return (
@@ -156,6 +164,10 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
                 value={formData.birth_year}
                 onChange={handleTextChange}
                 margin="normal"
+                inputProps={{
+                  min: 1900,
+                  max: new Date().getFullYear(),
+                }}
               />
               <FormControl fullWidth margin="normal">
                 <InputLabel>Gender</InputLabel>
