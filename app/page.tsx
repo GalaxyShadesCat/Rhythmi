@@ -38,6 +38,7 @@ import HealthChatbot from "@/components/HealthChatbot";
 import useTestMode from "@/hooks/useTestMode";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import FetchHistory from "@/components/FetchHistory";
+import Profile from "@/components/Profile";
 
 export default function Home() {
   const { user, saveUser, clearUser } = useLocalStorage();
@@ -166,7 +167,7 @@ export default function Home() {
       case 2:
         return (
           <Typography variant="h6" mt={3}>
-            Profile Placeholder
+            <Profile />;
           </Typography>
         );
       default:
