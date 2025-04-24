@@ -100,7 +100,7 @@ export default function Home() {
             <Typography variant="h6" mt={3}>
               Your Records
             </Typography>
-            <FetchHistory />
+            <FetchHistory user_name={user.user_name} />
           </Box>
         );
       // New Record tab
