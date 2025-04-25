@@ -99,7 +99,6 @@ export default function Home() {
         return (
           <Box>
             <Typography variant="h6" mt={3}>
-              Your Records
             </Typography>
             <FetchHistory user_name={user.user_name} />
           </Box>
