@@ -15,6 +15,7 @@ export interface RecordData {
   exercise_metrics: ECGMetrics;
   recovery_metrics: ECGMetrics;
   activity_segments: ActivitySegment[];
+  hrr_points?: HRRPoint[];
 }
 
 export interface ECGDataPoint {
@@ -25,6 +26,12 @@ export interface ECGDataPoint {
 export interface HRDataPoint {
   timestamp: number;
   value: number;
+}
+
+export interface HRRPoint {
+  time: number; // seconds since recovery start
+  hr: number | null;
+  hrr: number | null;
 }
 
 export interface ECGMetrics {
@@ -41,11 +48,11 @@ export interface ECGMetrics {
 
 export const ACTIVITY_COLORS: Record<ActivityType, string> = {
   rest: "blue",
-  walk: "green",
-  run: "red",
+  exercise: "green",
+  recovery: "red",
 };
 
-export type ActivityType = "rest" | "walk" | "run";
+export type ActivityType = "rest" | "exercise" | "recovery";
 
 export interface ActivitySegment {
   type: keyof typeof ACTIVITY_COLORS;

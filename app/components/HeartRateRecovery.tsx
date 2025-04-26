@@ -36,28 +36,32 @@ function findClosestHR(
 type HeartRateRecoveryProps = {
   isConnected: boolean;
   hrHistory: HRDataPoint[];
+  startTimestamp: number | null;
+  exerciseEndTimestamp: number | null;
 };
 
 export default function HeartRateRecovery({
   isConnected,
   hrHistory,
+  startTimestamp,
+  exerciseEndTimestamp,
 }: HeartRateRecoveryProps) {
-  const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
-  const [exerciseEndTimestamp, setExerciseEndTimestamp] = useState<
-    number | null
-  >(null);
   const [peakHR, setPeakHR] = useState<number>(0);
-
   const [recordedHRs, setRecordedHRs] = useState<HRDataPoint[]>([]);
-  const recoveryHR = recordedHRs[0]?.value ?? null;
-
+  const immediateHR = recordedHRs[0]?.value ?? null; // HR at t=0
+  const recoveryHR = recordedHRs[1]?.value ?? null;
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hrHistoryRef = useRef(hrHistory);
 
+  useEffect(() => {
+    hrHistoryRef.current = hrHistory;
+  }, [hrHistory]);
+
+  // Chart data
   const chartData = useMemo(() => {
     if (!startTimestamp) return [];
-
     return hrHistory
       .filter(
         (p) =>
@@ -72,32 +76,40 @@ export default function HeartRateRecovery({
 
   // Start 30s interval to record HR post-exercise
   useEffect(() => {
+    setRecordedHRs([]); // Clear on new exerciseEndTimestamp!
     if (!exerciseEndTimestamp) return;
 
+    let count = 0;
     intervalRef.current = setInterval(() => {
+      if (count >= 10) {
+        clearInterval(intervalRef.current!);
+        return;
+      }
       const now = Date.now();
-      const closest = findClosestHR(hrHistory, now);
+      const closest = findClosestHR(hrHistoryRef.current, now);
       if (closest) {
         setRecordedHRs((prev) => {
-          const newRecord = {
-            timestamp: closest.timestamp,
-            value: closest.value,
-          };
-          if (prev.length < 10) {
-            return [...prev, newRecord];
-          } else {
-            clearInterval(intervalRef.current!);
-            return prev;
-          }
+          // Prevent duplicates
+          if (prev.find((r) => r.timestamp === closest.timestamp)) return prev;
+          count = prev.length + 1;
+          return [...prev, closest];
         });
       }
     }, 30000); // every 30 seconds
 
+    // Immediately record HR at t=0, as first entry
+    const immediate = findClosestHR(hrHistoryRef.current, exerciseEndTimestamp);
+    if (immediate) {
+      setRecordedHRs([immediate]);
+      count = 1;
+    }
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [exerciseEndTimestamp, hrHistory]);
+  }, [exerciseEndTimestamp]);
 
+  // Calculate peak HR during exercise
   useEffect(() => {
     if (!isConnected || !startTimestamp) return;
 
@@ -116,6 +128,7 @@ export default function HeartRateRecovery({
     if (avg > peakHR) {
       setPeakHR(Math.round(avg));
     }
+    // eslint-disable-next-line
   }, [hrHistory, isConnected, startTimestamp, exerciseEndTimestamp, peakHR]);
 
   const hrr = useMemo(() => {
@@ -125,28 +138,7 @@ export default function HeartRateRecovery({
     return null;
   }, [peakHR, recoveryHR]);
 
-  const handleToggleExercise = () => {
-    const now = Date.now();
-    const latest = hrHistory[hrHistory.length - 1];
-
-    if (!startTimestamp) {
-      if (latest) {
-        setStartTimestamp(latest.timestamp);
-        setExerciseEndTimestamp(null);
-        setPeakHR(0);
-        setRecordedHRs([]);
-      }
-    } else if (!exerciseEndTimestamp) {
-      setExerciseEndTimestamp(now);
-    } else {
-      setStartTimestamp(null);
-      setExerciseEndTimestamp(null);
-      setPeakHR(0);
-      setRecordedHRs([]);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    }
-  };
-
+  // Chart rendering
   useEffect(() => {
     if (!chartRef.current) return;
 
@@ -201,24 +193,7 @@ export default function HeartRateRecovery({
       </h2>
 
       <div className="space-y-2 text-gray-700 mb-4">
-        <button
-          onClick={handleToggleExercise}
-          disabled={!startTimestamp && hrHistory.length === 0}
-          className={`px-4 py-2 rounded-md text-white font-medium ${
-            !startTimestamp
-              ? "bg-green-600 disabled:bg-gray-400"
-              : !exerciseEndTimestamp
-              ? "bg-blue-600"
-              : "bg-red-600"
-          }`}
-        >
-          {!startTimestamp
-            ? "Start Exercise"
-            : !exerciseEndTimestamp
-            ? "End Exercise"
-            : "Reset"}
-        </button>
-
+        {/* No start/end/reset button here! */}
         {startTimestamp && (
           <>
             <p>

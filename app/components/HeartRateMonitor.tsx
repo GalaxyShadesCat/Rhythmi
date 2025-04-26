@@ -1,5 +1,14 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
+import {
+  Typography,
+  Button,
+  Stack,
+  Alert,
+  Box,
+  Card,
+  CardContent,
+} from "@mui/material";
 
 interface MonitorControlsProps {
   isConnected: boolean;
@@ -22,69 +31,113 @@ const HeartRateMonitor: React.FC<MonitorControlsProps> = ({
   error,
   heartRate,
 }) => {
+  // Auto-start ECG stream when connected
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (isConnected && !isECGStreaming) {
+      timer = setTimeout(() => {
+        startECGStream();
+      }, 2000); // 2 second = 2000 ms
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
+
+  // Not connected: Show Connect button
+  if (!isConnected) {
+    return (
+      <Box display="flex" justifyContent="center" width="100%">
+        <Button
+          onClick={connect}
+          variant="contained"
+          color="primary"
+          fullWidth
+          size="large"
+          sx={{
+            borderRadius: "999px",
+            fontWeight: 600,
+            fontSize: "1rem",
+            backgroundColor: "#0080FF",
+            color: "#fff",
+            boxShadow: "none",
+            mx: "auto",
+            my: 2,
+            width: "100%",
+            maxWidth: 400,
+            "&:hover": {
+              backgroundColor: "#0070e0",
+              boxShadow: "none",
+            },
+          }}
+        >
+          Connect to Polar H10
+        </Button>
+      </Box>
+    );
+  }
+
+  // Connected: Show heart rate, disconnect, stop stream
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow overflow-hidden">
-      <div className="p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          Heart Rate & ECG Monitor
-        </h1>
-
-        {error && (
-          <div
-            className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6"
-            role="alert"
-          >
-            <p className="font-bold">Error</p>
-            <p>{error}</p>
-          </div>
-        )}
-
-        {!isConnected ? (
-          <button
-            onClick={connect}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
-          >
-            Connect to Polar H10
-          </button>
-        ) : (
-          <div className="space-y-6">
-            <div className="bg-gray-100 rounded-lg p-4 flex items-center justify-between">
-              <span className="text-lg font-semibold text-gray-700">
+    <Box maxWidth={480} mx="auto" mt={2}>
+      <Card>
+        <CardContent>
+          <Stack spacing={3}>
+            {error && (
+              <Alert severity="error" variant="outlined">
+                <Typography fontWeight="bold">Error</Typography>
+                <Typography variant="body2">{error}</Typography>
+              </Alert>
+            )}
+            <Box
+              bgcolor="grey.100"
+              borderRadius={2}
+              p={2}
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Typography variant="subtitle1" fontWeight={600}>
                 Heart Rate:
-              </span>
-              <span className="text-2xl font-bold text-blue-600">
-                {heartRate ? `${heartRate} BPM` : "Waiting for data..."}
-              </span>
-            </div>
-
-            <div className="flex space-x-4">
-              <button
+              </Typography>
+              <Typography variant="h4" color="primary" fontWeight="bold">
+                {heartRate ? `${heartRate} BPM` : "Waiting..."}
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={2}>
+              <Button
                 onClick={disconnect}
-                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
+                variant="contained"
+                color="error"
+                fullWidth
+                sx={{
+                  borderRadius: "999px",
+                  fontWeight: 600,
+                  boxShadow: "none",
+                }}
               >
                 Disconnect
-              </button>
-
-              {!isECGStreaming ? (
-                <button
-                  onClick={startECGStream}
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
-                >
-                  Start ECG Stream
-                </button>
-              ) : (
-                <button
-                  onClick={stopECGStream}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
-                >
-                  Stop ECG Stream
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+              </Button>
+              {/* <Button
+                onClick={stopECGStream}
+                variant="contained"
+                color="warning"
+                fullWidth
+                disabled={!isECGStreaming}
+                sx={{
+                  borderRadius: "999px",
+                  fontWeight: 600,
+                  boxShadow: "none",
+                }}
+              >
+                Stop ECG Stream
+              </Button> */}
+            </Stack>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

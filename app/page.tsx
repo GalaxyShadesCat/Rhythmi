@@ -20,35 +20,17 @@ import PersonIcon from "@mui/icons-material/Person";
 import ChatIcon from "@mui/icons-material/Chat";
 
 import { useHeartRateSensor } from "@/hooks/useHeartRateSensor";
-import {
-  ActivitySegment,
-  ECGDataPoint,
-  HRDataPoint,
-  RecordData,
-} from "@/types/types";
 import HeartRateMonitor from "@/components/HeartRateMonitor";
-import UploadButton from "@/components/UploadButton";
-import ActivitySegmentEditor from "@/components/ActivitySegmentEditor";
-import HeartRateRecovery from "@/components/HeartRateRecovery";
-import ECGCalibration from "@/components/ECGCalibration";
-import ECGAnalysis from "@/components/ECGAnalysis";
-import ECGChartPanel from "@/components/ECGChartPanel";
-import TestModePanel from "@/components/TestModePanel";
 import Login from "@/components/Login";
 import HealthChatbot from "@/components/HealthChatbot";
-import useTestMode from "@/hooks/useTestMode";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import FetchHistory from "@/components/FetchHistory";
 import Profile from "@/components/Profile";
+import NewRecord from "@/app/components/NewRecord";
 
 export default function Home() {
   const { user, saveUser, clearUser } = useLocalStorage();
   const [navIndex, setNavIndex] = useState(0);
-  const [activitySegments, setActivitySegments] = useState<ActivitySegment[]>(
-    []
-  );
-  const [restECG, setRestECG] = useState<ECGDataPoint[]>([]);
-  const [restHR, setRestHR] = useState<HRDataPoint[]>([]);
 
   const {
     connect,
@@ -63,29 +45,6 @@ export default function Home() {
     isConnected,
     isECGStreaming,
   } = useHeartRateSensor();
-
-  const {
-    isTestMode,
-    isChartPaused,
-    toggleTestMode,
-    togglePauseChart,
-    displayEcgData,
-  } = useTestMode(currentECG);
-
-  const record: RecordData | null = useMemo(() => {
-    if (!user || !user._id || ecgHistory.length === 0) return null;
-    return null;
-    // return {
-    //   user_id: user._id,
-    //   datetime: new Date().toISOString(),
-    //   ecg: ecgHistory,
-    //   hr: hrHistory,
-    //   rest_metrics: undefined,
-    //   exercise_metrics: undefined,
-    //   recovery_metrics: undefined,
-    //   activity_segments: activitySegments,
-    // };
-  }, [user, ecgHistory, hrHistory, activitySegments, restECG, restHR]);
 
   const [openChat, setOpenChat] = useState(false);
 
@@ -120,25 +79,29 @@ export default function Home() {
               heartRate={currentHR}
             />
 
-            <TestModePanel
-              isTestMode={isTestMode}
-              onToggleTestMode={toggleTestMode}
+            <NewRecord
+              isConnected={isConnected}
+              isECGStreaming={isECGStreaming}
+              ecgHistory={ecgHistory}
+              hrHistory={hrHistory}
+              user={user}
             />
 
-            {(isECGStreaming || isTestMode) && (
+            {/* {isECGStreaming && (
               <>
-                <ECGChartPanel
-                  ecgData={displayEcgData}
-                  isPaused={isChartPaused}
-                  onTogglePause={togglePauseChart}
-                />
+                <ECGChart ecgData={displayEcgData} />
                 <ECGAnalysis
                   ecgData={currentECG}
                   currentHR={currentHR}
                   restHR={restHR}
                 />
               </>
-            )}
+            )} */}
+
+            {/* <TestModePanel
+              isTestMode={isTestMode}
+              onToggleTestMode={toggleTestMode}
+            />
 
             <Box className="max-w-4xl mx-auto mt-6">
               <UploadButton record={record} />
@@ -161,7 +124,7 @@ export default function Home() {
               ecgData={ecgHistory}
               segments={activitySegments}
               setSegments={setActivitySegments}
-            />
+            /> */}
           </Box>
         );
       // Profile tab
