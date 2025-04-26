@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useMongoDB, RecordData } from "@/hooks/useMongoDB";
+import { useMongoDB } from "@/hooks/useMongoDB";
+import { RecordData } from "@/types/types";
 import {
   Chart as ChartJS,
   CategoryScale,

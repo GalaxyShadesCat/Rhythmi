@@ -1,4 +1,5 @@
-import { useMongoDB, RecordData } from "@/hooks/useMongoDB";
+import { useMongoDB } from "@/hooks/useMongoDB";
+import { RecordData } from "@/types/types";
 
 function UploadButton({ record }: { record: RecordData | null }) {
   const { uploadRecord, loading, error, success } = useMongoDB();

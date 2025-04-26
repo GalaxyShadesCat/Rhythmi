@@ -1,20 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
+import { ECGDataPoint, HRDataPoint } from "@/types/types";
 
 const PMD_SERVICE_UUID = "fb005c80-02e7-f387-1cad-8acd2d8df0c8";
 const PMD_CONTROL_CHARACTERISTIC_UUID = "fb005c81-02e7-f387-1cad-8acd2d8df0c8";
 const PMD_DATA_CHARACTERISTIC_UUID = "fb005c82-02e7-f387-1cad-8acd2d8df0c8";
 const POLAR_HR_SERVICE_UUID = 0x180d;
 const POLAR_HR_CHARACTERISTIC_UUID = 0x2a37;
-
-interface ECGDataPoint {
-  timestamp: number;
-  value: number;
-}
-
-interface HRDataPoint {
-  timestamp: number;
-  value: number;
-}
 
 interface HeartRateSensorHook {
   connect: () => Promise<void>;
@@ -238,5 +229,3 @@ function parseECGData(value: DataView): { samples: number[] } {
 
   return { samples };
 }
-
-export type { ECGDataPoint, HRDataPoint };

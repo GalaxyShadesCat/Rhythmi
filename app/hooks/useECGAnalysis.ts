@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ECGDataPoint, HRDataPoint } from "@/hooks/useHeartRateSensor";
+import { ECGDataPoint, HRDataPoint } from "@/types/types";
 
 // Define our own interface here to avoid circular dependencies
 export interface ECGMetrics {

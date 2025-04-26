@@ -1,4 +1,4 @@
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
+import { ECGDataPoint } from "@/types/types";
 import { BaseMetrics } from "@/hooks/calculateBaseMetrics";
 
 interface RecoveryPeriod {

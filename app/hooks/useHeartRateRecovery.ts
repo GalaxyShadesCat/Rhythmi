@@ -1,15 +1,15 @@
 import { useMemo } from "react";
-import { HRPoint } from "@/hooks/useMongoDB";
+import { HRDataPoint } from "@/types/types";
 
-function calculateAverageHR(data: HRPoint[]): number {
+function calculateAverageHR(data: HRDataPoint[]): number {
   if (!data || data.length === 0) return 0;
   const total = data.reduce((sum, point) => sum + point.value, 0);
   return total / data.length;
 }
 
 export function useAverageHeartRateComparison(
-  baselineHR: HRPoint[],
-  sessionHR: HRPoint[]
+  baselineHR: HRDataPoint[],
+  sessionHR: HRDataPoint[]
 ) {
   const { averageBaselineHR, averageSessionHR, difference } = useMemo(() => {
     const avgBaseline = calculateAverageHR(baselineHR);

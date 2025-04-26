@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
 import { ECGComparisonMetrics } from "@/types/ecg";
-import { useECGAnalysis } from "../hooks/useECGAnalysis";
-import { ActivitySegment } from "@/hooks/useMongoDB";
+import { useECGAnalysis } from "@/hooks/useECGAnalysis";
+import { ECGDataPoint, ActivitySegment } from "@/types/types";
 
 export function useECGComparison(
   baselineECG: ECGDataPoint[],

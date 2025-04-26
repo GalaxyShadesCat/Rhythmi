@@ -1,7 +1,10 @@
 import React, { useState } from "react";
-import { ActivityType, ActivitySegment } from "@/hooks/useMongoDB";
-import { ACTIVITY_COLORS } from "@/hooks/useMongoDB";
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
+import {
+  ACTIVITY_COLORS,
+  ActivitySegment,
+  ActivityType,
+  ECGDataPoint,
+} from "@/types/types";
 
 export function getActivityColor(type: string): string {
   return ACTIVITY_COLORS[type as ActivityType] || "gray";
@@ -157,7 +160,7 @@ function ActivitySegmentEditor({
 
   return (
     <div className="bg-white p-6 rounded-lg shadow max-w-4xl mx-auto mt-8">
-       <h2 className="text-xl font-semibold mb-4">Activity Annotation</h2>
+      <h2 className="text-xl font-semibold mb-4">Activity Annotation</h2>
       <div className="mb-4 text-sm text-gray-700">
         {ecgStart && ecgEnd ? (
           <p>

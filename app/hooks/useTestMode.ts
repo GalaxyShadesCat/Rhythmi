@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
+import { ECGDataPoint } from "@/types/types";
 
 function useTestMode(
   ecgData: ECGDataPoint[],

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { User } from "@/hooks/useMongoDB";
+import type { User } from "@/types/types";
 
 const LOCAL_STORAGE_KEY = "user_data";
 

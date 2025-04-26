@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ECGDataPoint, HRDataPoint } from "@/hooks/useHeartRateSensor";
+import { ECGDataPoint, HRDataPoint } from "@/types/types";
 
 type QualityRating = "excellent" | "good" | "fair" | "poor";
 

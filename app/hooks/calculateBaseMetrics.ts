@@ -1,4 +1,4 @@
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
+import { ECGDataPoint } from "@/types/types";
 
 export interface BaseMetrics {
   mean: number;

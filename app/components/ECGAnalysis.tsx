@@ -1,5 +1,5 @@
 import { useECGAnalysis } from "@/hooks/useECGAnalysis";
-import { ECGDataPoint, HRDataPoint } from "@/hooks/useHeartRateSensor";
+import { ECGDataPoint, HRDataPoint } from "@/types/types";
 
 function ECGAnalysis({
   ecgData,

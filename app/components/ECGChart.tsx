@@ -11,7 +11,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
+import { ECGDataPoint } from "@/types/types";
 
 ChartJS.register(
   CategoryScale,

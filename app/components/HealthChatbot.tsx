@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { marked } from "marked";
-import { User } from "@/hooks/useMongoDB";
+import { User } from "@/types/types";
 
 const getRandom = (min: number, max: number) =>
   Math.round((Math.random() * (max - min) + min) * 100) / 100;

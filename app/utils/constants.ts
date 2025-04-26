@@ -1,0 +1,2 @@
+export const ECG_DEFAULT_SAMPLE_RATE = 130;
+export const ECG_DISPLAY_SAMPLE_RATE = 50;

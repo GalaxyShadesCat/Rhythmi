@@ -19,12 +19,13 @@ import ArticleIcon from "@mui/icons-material/Article";
 import PersonIcon from "@mui/icons-material/Person";
 import ChatIcon from "@mui/icons-material/Chat";
 
+import { useHeartRateSensor } from "@/hooks/useHeartRateSensor";
 import {
+  ActivitySegment,
   ECGDataPoint,
   HRDataPoint,
-  useHeartRateSensor,
-} from "@/hooks/useHeartRateSensor";
-import { ActivitySegment, RecordData } from "@/hooks/useMongoDB";
+  RecordData,
+} from "@/types/types";
 import HeartRateMonitor from "@/components/HeartRateMonitor";
 import UploadButton from "@/components/UploadButton";
 import ActivitySegmentEditor from "@/components/ActivitySegmentEditor";
@@ -73,15 +74,17 @@ export default function Home() {
 
   const record: RecordData | null = useMemo(() => {
     if (!user || !user._id || ecgHistory.length === 0) return null;
-    return {
-      user_id: user._id,
-      datetime: new Date().toISOString(),
-      ecg: ecgHistory,
-      hr: hrHistory,
-      activity_segments: activitySegments,
-      rest_ecg: restECG,
-      rest_hr: restHR,
-    };
+    return null;
+    // return {
+    //   user_id: user._id,
+    //   datetime: new Date().toISOString(),
+    //   ecg: ecgHistory,
+    //   hr: hrHistory,
+    //   rest_metrics: undefined,
+    //   exercise_metrics: undefined,
+    //   recovery_metrics: undefined,
+    //   activity_segments: activitySegments,
+    // };
   }, [user, ecgHistory, hrHistory, activitySegments, restECG, restHR]);
 
   const [openChat, setOpenChat] = useState(false);
@@ -98,8 +101,7 @@ export default function Home() {
       case 0:
         return (
           <Box>
-            <Typography variant="h6" mt={3}>
-            </Typography>
+            <Typography variant="h6" mt={3}></Typography>
             <FetchHistory user_name={user.user_name} />
           </Box>
         );

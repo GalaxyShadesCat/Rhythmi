@@ -9,7 +9,7 @@ import {
   Legend,
   Filler,
 } from "chart.js";
-import { HRDataPoint } from "@/hooks/useHeartRateSensor";
+import { HRDataPoint } from "@/types/types";
 
 Chart.register(
   LineElement,

@@ -14,7 +14,8 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import { useMongoDB, type User } from "@/hooks/useMongoDB";
+import { useMongoDB } from "@/hooks/useMongoDB";
+import { User } from "@/types/types";
 
 type LoginProps = {
   user: User | null;

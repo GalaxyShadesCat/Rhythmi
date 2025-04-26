@@ -1,46 +1,5 @@
 import { useState } from "react";
-
-export interface HRPoint {
-  timestamp: number;
-  value: number;
-}
-
-export interface ECGPoint {
-  timestamp: number;
-  value: number;
-}
-
-export const ACTIVITY_COLORS: Record<ActivityType, string> = {
-  rest: "blue",
-  walk: "green",
-  run: "red",
-};
-
-export type ActivityType = "rest" | "walk" | "run";
-
-export interface ActivitySegment {
-  type: keyof typeof ACTIVITY_COLORS;
-  start: number;
-  end: number;
-}
-
-export interface User {
-  _id?: string;
-  user_name: string; // Unique across all users
-  birth_year: number;
-  gender: string;
-}
-
-export interface RecordData {
-  _id?: string;
-  user_id: string; // Reference to User._id
-  datetime: string; // ISO string
-  ecg: ECGPoint[];
-  hr: HRPoint[];
-  activity_segments: ActivitySegment[];
-  rest_ecg: ECGPoint[];
-  rest_hr: HRPoint[];
-}
+import { RecordData, User } from "@/types/types";
 
 export function useMongoDB() {
   const [loading, setLoading] = useState(false);

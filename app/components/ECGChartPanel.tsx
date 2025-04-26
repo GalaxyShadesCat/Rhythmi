@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import ECGChart from "./ECGChart";
-import { ECGDataPoint } from "@/hooks/useHeartRateSensor";
+import { ECGDataPoint } from "@/types/types";
 
 interface ECGChartPanelProps {
   ecgData: ECGDataPoint[];

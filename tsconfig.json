@@ -22,7 +22,9 @@
     "paths": {
       "@/*": ["./*"],
       "@/components/*": ["app/components/*"],
-      "@/hooks/*": ["app/hooks/*"]
+      "@/hooks/*": ["app/hooks/*"],
+      "@/types/*": ["app/types/*"],
+      "@/utils/*": ["app/utils/*"]
     },
     "target": "ES2017"
   },
