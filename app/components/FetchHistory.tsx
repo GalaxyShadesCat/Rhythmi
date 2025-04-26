@@ -64,14 +64,18 @@ function FetchHistory({ user_name }: FetchHistoryProps) {
 
   useEffect(() => {
     fetchRecords();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user_name]);
 
-  const formatECGChartData = (ecgData: { timestamp: number; value: number }[]) => {
+  const formatECGChartData = (
+    ecgData: { timestamp: number; value: number }[]
+  ) => {
     const visibleData = ecgData.slice(-visibleDataPoints);
-    
+
     return {
-      labels: visibleData.map((point, index) => 
-        new Date(point.timestamp).toLocaleTimeString() || index.toString()
+      labels: visibleData.map(
+        (point, index) =>
+          new Date(point.timestamp).toLocaleTimeString() || index.toString()
       ),
       datasets: [
         {
@@ -98,11 +102,12 @@ function FetchHistory({ user_name }: FetchHistoryProps) {
       },
       tooltip: {
         callbacks: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           label: (context: any) => {
             return `Value: ${context.parsed.y} µV`;
-          }
-        }
-      }
+          },
+        },
+      },
     },
     scales: {
       x: {
@@ -162,14 +167,21 @@ function FetchHistory({ user_name }: FetchHistoryProps) {
                       {new Date(record.datetime).toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-600">
-                      ECG Points: {record.ecg.length} | HR Points: {record.hr.length}
+                      ECG Points: {record.ecg.length} | HR Points:{" "}
+                      {record.hr.length}
                     </p>
                   </div>
                   <button
-                    onClick={() => setSelectedRecord(selectedRecord?._id === record._id ? null : record)}
+                    onClick={() =>
+                      setSelectedRecord(
+                        selectedRecord?._id === record._id ? null : record
+                      )
+                    }
                     className="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm"
                   >
-                    {selectedRecord?._id === record._id ? "Hide ECG" : "Show ECG"}
+                    {selectedRecord?._id === record._id
+                      ? "Hide ECG"
+                      : "Show ECG"}
                   </button>
                 </div>
 
