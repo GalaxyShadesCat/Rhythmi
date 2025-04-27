@@ -35,31 +35,45 @@ function FetchHistory({ user_name }: FetchHistoryProps) {
   const { getUserByUsername, loading, error, setError } = useMongoDB();
 
   const fetchRecords = async () => {
+    setError(null);
+    
     if (!user_name.trim()) {
       setError("Username not available");
       return;
     }
-
+  
     try {
       const user = await getUserByUsername(user_name);
-      if (!user) {
-        setError("User not found");
+      if (!user || !user._id) {
+        setError("User not found or missing ID");
         return;
       }
-
-      const response = await fetch(`/api/records?user_name=${user.user_name}`);
+  
+      const response = await fetch(`/api/records?user_id=${encodeURIComponent(user._id)}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+  
       if (!response.ok) {
-        throw new Error("Failed to fetch records");
+        throw new Error(`Failed to fetch records: ${response.statusText}`);
       }
-
-      const userRecords = await response.json();
-      setRecords(userRecords);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred while fetching records");
+  
+      const result = await response.json();
+      
+      // Handle both possible response formats
+      const recordsData = result.data || result;
+      
+      if (!Array.isArray(recordsData)) {
+        throw new Error("Invalid records data format received");
       }
+  
+      setRecords(recordsData);
+      console.log("Fetched records:", recordsData);
+  
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Fetch error:", message);
+      setError(message);
     }
   };
 
