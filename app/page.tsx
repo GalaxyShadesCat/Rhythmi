@@ -11,6 +11,8 @@ import {
   Typography,
   Fab,
   Slide,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -35,6 +37,44 @@ const HOVER_BLUE = "#0070e0";
 export default function Home() {
   const { user, saveUser, clearUser } = useLocalStorage();
   const [navIndex, setNavIndex] = useState(0);
+  const [openChat, setOpenChat] = useState(false);
+  
+  // --------------------------------------------------------
+  // SIMULATION MODE - Comment out this block before deployment
+  // --------------------------------------------------------
+  /*
+  const [simulationMode, setSimulationMode] = useState(false);
+  const handleSimulationToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const enabled = event.target.checked;
+    setSimulationMode(enabled);
+    toggleSimulation(enabled);
+  };
+  
+  const simulationUI = (
+    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={simulationMode}
+            onChange={handleSimulationToggle}
+            color="primary"
+          />
+        }
+        label={
+          <Typography variant="body2">
+            {simulationMode ? "Simulation Mode (ON)" : "Simulation Mode (OFF)"}
+          </Typography>
+        }
+      />
+    </Box>
+  );
+  */
+  // Set to false for production
+  const simulationMode = false;
+  const simulationUI = null;
+  // --------------------------------------------------------
+  // END SIMULATION MODE
+  // --------------------------------------------------------
 
   const {
     connect,
@@ -48,9 +88,9 @@ export default function Home() {
     error,
     isConnected,
     isECGStreaming,
-  } = useHeartRateSensor();
-
-  const [openChat, setOpenChat] = useState(false);
+    isSimulated,
+    setSimulationMode: toggleSimulation,
+  } = useHeartRateSensor(simulationMode);
 
   // Show login if not logged in
   if (!user) {
@@ -72,6 +112,9 @@ export default function Home() {
       case 1:
         return (
           <Box>
+            {/* Simulation mode toggle - enabled for development */}
+            {simulationUI}
+
             <HeartRateMonitor
               isConnected={isConnected}
               isECGStreaming={isECGStreaming}

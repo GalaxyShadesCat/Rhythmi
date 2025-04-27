@@ -9,7 +9,7 @@ const POLAR_HR_CHARACTERISTIC_UUID = 0x2a37;
 
 // Enable simulation for development environments
 // Set this to false before production deployment
-const USE_SIMULATION = process.env.NODE_ENV === 'development';
+const DEFAULT_SIMULATION = process.env.NODE_ENV === 'development';
 
 interface HeartRateSensorHook {
   connect: () => Promise<void>;
@@ -23,6 +23,8 @@ interface HeartRateSensorHook {
   error: string | null;
   isConnected: boolean;
   isECGStreaming: boolean;
+  isSimulated: boolean;
+  setSimulationMode: (enabled: boolean) => void;
 }
 
 // Generate simulated ECG data (approximate sine wave with noise)
@@ -71,7 +73,9 @@ function generateSimulatedECGData(
   return result;
 }
 
-export function useHeartRateSensor(): HeartRateSensorHook {
+export function useHeartRateSensor(
+  forceSimulation?: boolean
+): HeartRateSensorHook {
   // State Management Section
   const [device, setDevice] = useState<BluetoothDevice | null>(null);
   const [currentECG, setCurrentECG] = useState<ECGDataPoint[]>([]);
@@ -81,12 +85,23 @@ export function useHeartRateSensor(): HeartRateSensorHook {
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isECGStreaming, setIsECGStreaming] = useState<boolean>(false);
+  const [isSimulated, setIsSimulated] = useState<boolean>(
+    forceSimulation !== undefined ? forceSimulation : DEFAULT_SIMULATION
+  );
   const [pmdControlCharacteristic, setPmdControlCharacteristic] =
     useState<BluetoothRemoteGATTCharacteristic | null>(null);
   const [pmdDataCharacteristic, setPmdDataCharacteristic] =
     useState<BluetoothRemoteGATTCharacteristic | null>(null);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hrUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to set simulation mode
+  const setSimulationMode = useCallback((enabled: boolean) => {
+    if (isConnected) {
+      disconnect();
+    }
+    setIsSimulated(enabled);
+  }, [isConnected]);
 
   // Cleanup function for intervals
   const clearSimulationIntervals = useCallback(() => {
@@ -131,7 +146,7 @@ export function useHeartRateSensor(): HeartRateSensorHook {
       }
       
       // If in simulation mode and enabled, simulate a connection
-      if (USE_SIMULATION) {
+      if (isSimulated) {
         // Start simulation for heart rate immediately
         setIsConnected(true);
         setCurrentHR(70); // Start with a resting heart rate
@@ -231,12 +246,12 @@ export function useHeartRateSensor(): HeartRateSensorHook {
       );
       throw err; // Rethrow to allow component to handle
     }
-  }, [currentHR, isConnected, disconnect]);
+  }, [currentHR, isConnected, isSimulated, disconnect]);
 
   // ECG Stream Control
   const startECGStream = useCallback(async () => {
     try {
-      if (USE_SIMULATION) {
+      if (isSimulated) {
         // First stop any existing simulation
         if (simulationIntervalRef.current) {
           clearInterval(simulationIntervalRef.current);
@@ -321,7 +336,7 @@ export function useHeartRateSensor(): HeartRateSensorHook {
       );
       throw err;
     }
-  }, [pmdControlCharacteristic, pmdDataCharacteristic, currentHR]);
+  }, [pmdControlCharacteristic, pmdDataCharacteristic, currentHR, isSimulated]);
 
   const stopECGStream = useCallback(async () => {
     // Stop simulation interval if active
@@ -363,6 +378,8 @@ export function useHeartRateSensor(): HeartRateSensorHook {
     error,
     isConnected,
     isECGStreaming,
+    isSimulated,
+    setSimulationMode,
   };
 }
 

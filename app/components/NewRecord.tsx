@@ -13,6 +13,7 @@ import {
   TableBody,
   TableCell,
   TableRow,
+  Chip,
 } from "@mui/material";
 import UploadIcon from "@mui/icons-material/Upload";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -44,6 +45,7 @@ import { getDataForSegment } from "../utils/phaseData";
 import { useMongoDB } from "../hooks/useMongoDB";
 import ECGChart from "./ECGChart";
 import { set } from "date-fns";
+import useSignalQuality from "@/hooks/useSignalQuality";
 
 // --- Constants and Helpers ---
 
@@ -63,9 +65,9 @@ const PHASE_ICONS: Record<ActivityType, JSX.Element> = {
   exercise: <DirectionsRunIcon />,
   recovery: <RestoreIcon />,
 };
-const PHASE_DURATIONS = {
-  rest: 0.5 * 60 * 1000,
-  exercise: 0.5 * 60 * 1000,
+const PHASE_MINIMUM_DURATIONS = {
+  rest: 10 * 1000, // 10 seconds for testing (was 3 minutes)
+  exercise: 15 * 1000, // 15 seconds for testing (was 6 minutes)
   recovery: 0,
 };
 
@@ -333,6 +335,7 @@ interface RecordSummaryCardProps {
   segmentStats: (ActivitySegment & {
     stats: ReturnType<typeof calculateStatsForSegment>;
     metrics?: ECGMetrics | null;
+    signalQuality?: string;
   })[];
   baseHR: number | string;
   peakHR: number | string;
@@ -368,9 +371,22 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
                 mb: 1,
               }}
             >
-              <Typography variant="subtitle2" fontWeight={600} mb={0.5}>
-                {PHASE_LABELS[seg.type]}
-              </Typography>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Typography variant="subtitle2" fontWeight={600} mb={0.5}>
+                  {PHASE_LABELS[seg.type]}
+                </Typography>
+                {seg.signalQuality && (
+                  <Chip 
+                    label={`Signal Quality: ${seg.signalQuality}`} 
+                    color={
+                      seg.signalQuality === "excellent" ? "success" :
+                      seg.signalQuality === "good" ? "info" :
+                      seg.signalQuality === "fair" ? "warning" : "error"
+                    }
+                    size="small"
+                  />
+                )}
+              </Box>
               <Typography variant="body2">
                 Min: <b>{seg.stats.min}</b> bpm, Max: <b>{seg.stats.max}</b>{" "}
                 bpm, Mean: <b>{seg.stats.mean}</b> bpm, Points:{" "}
@@ -410,6 +426,8 @@ interface PhaseControlCardProps {
   onAddNewRecord?: () => void;
   uploadSuccess?: boolean;
   canUpload: boolean;
+  signalQuality?: string;
+  canAdvancePhase: boolean;
 }
 const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
   currentPhase,
@@ -424,6 +442,8 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
   onAddNewRecord,
   uploadSuccess,
   canUpload,
+  signalQuality,
+  canAdvancePhase,
 }) => {
   if (isSessionDone) {
     // After recovery finished, show Upload or Add New Record
@@ -435,6 +455,17 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
             <Typography variant="h6" ml={1}>
               Ready to Upload
             </Typography>
+            {signalQuality && (
+              <Chip 
+                label={`Signal Quality: ${signalQuality}`} 
+                color={
+                  signalQuality === "excellent" ? "success" :
+                  signalQuality === "good" ? "info" :
+                  signalQuality === "fair" ? "warning" : "error"
+                }
+                sx={{ ml: 2 }}
+              />
+            )}
           </Box>
           <Typography variant="body2" color="text.secondary" mb={2}>
             Upload your data to MongoDB.
@@ -470,9 +501,9 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
         </Box>
         <Typography variant="body2" color="text.secondary">
           {currentPhase === "rest" &&
-            "Sit and relax for at least 3 to 5 minutes. Press next to continue to exercise."}
+            "Sit and relax for at least 3 minutes. Press next to continue to exercise when ready."}
           {currentPhase === "exercise" &&
-            "Please exercise (e.g. brisk walk) for 6 minutes."}
+            "Please exercise (e.g. brisk walk) for at least 6 minutes. Press next to continue to recovery when ready."}
           {currentPhase === "recovery" &&
             "Rest until your heart rate returns to your resting value, then finish."}
         </Typography>
@@ -480,12 +511,12 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
           <Typography variant="h4" color={getPhaseColor(currentPhase)}>
             {formatMs(timer)}
           </Typography>
-          {PHASE_DURATIONS[currentPhase] > 0 && (
+          {PHASE_MINIMUM_DURATIONS[currentPhase] > 0 && (
             <Box width="100px">
               <LinearProgress
                 variant="determinate"
                 value={Math.min(
-                  (timer / PHASE_DURATIONS[currentPhase]) * 100,
+                  (timer / PHASE_MINIMUM_DURATIONS[currentPhase]) * 100,
                   100
                 )}
               />
@@ -507,6 +538,7 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
               variant="contained"
               color={getPhaseColor(currentPhase)}
               onClick={onNextPhase}
+              disabled={!canAdvancePhase}
               sx={{ minWidth: 120 }}
             >
               {phaseIdx < PHASES.length - 1
@@ -515,6 +547,11 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
             </Button>
           )}
         </Stack>
+        {phaseStart && !canAdvancePhase && (currentPhase === "rest" || currentPhase === "exercise") && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+            Minimum {currentPhase === "rest" ? "3" : "6"} minutes required before advancing
+          </Typography>
+        )}
       </CardContent>
     </Card>
   );
@@ -549,6 +586,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
   const [phaseStartHistory, setPhaseStartHistory] = useState<number[]>([]);
   const { uploadRecord, loading, error, success } = useMongoDB();
   const [hasUploaded, setHasUploaded] = useState(false);
+  const { calculateSignalQuality } = useSignalQuality();
 
   const currentPhase = PHASES[phaseIdx];
   const restSegment = activitySegments.find((s) => s.type === "rest");
@@ -682,14 +720,33 @@ const NewRecord: React.FC<NewRecordProps> = ({
         if (seg.type === "rest") metrics = restMetrics;
         if (seg.type === "exercise") metrics = exerciseMetrics;
         if (seg.type === "recovery") metrics = recoveryMetrics;
+        
+        // Calculate signal quality for this segment
+        const segmentData = getDataForSegment(ecgHistory, seg);
+        const signalQuality = segmentData.length > 0 ? calculateSignalQuality(segmentData) : undefined;
+        
         return {
           ...seg,
           stats: calculateStatsForSegment(hrHistory, seg),
           metrics,
+          signalQuality,
         };
       }),
-    [activitySegments, hrHistory, restMetrics, exerciseMetrics, recoveryMetrics]
+    [activitySegments, hrHistory, restMetrics, exerciseMetrics, recoveryMetrics, ecgHistory, calculateSignalQuality]
   );
+
+  // Determine if enough time has passed to advance to next phase
+  const canAdvancePhase = useMemo(() => {
+    if (!phaseStart) return false;
+    
+    if (currentPhase === "rest" || currentPhase === "exercise") {
+      return timer >= PHASE_MINIMUM_DURATIONS[currentPhase];
+    }
+    
+    // Recovery phase can always be advanced
+    return true;
+  }, [currentPhase, phaseStart, timer]);
+
   // Timer logic
   useEffect(() => {
     if (phaseStart) {
@@ -705,18 +762,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     };
   }, [phaseStart]);
 
-  // Auto-advance for rest/exercise
-  useEffect(() => {
-    if (
-      phaseStart &&
-      (currentPhase === "rest" || currentPhase === "exercise") &&
-      timer >= PHASE_DURATIONS[currentPhase] &&
-      PHASE_DURATIONS[currentPhase] > 0
-    ) {
-      handleNextPhase();
-    }
-    // eslint-disable-next-line
-  }, [timer, currentPhase, phaseStart]);
+  // Auto-advance for rest/exercise has been removed to ensure manual progression only
 
   // Phase Handlers
   const handleStartPhase = () => {
@@ -746,6 +792,20 @@ const NewRecord: React.FC<NewRecordProps> = ({
     }
   };
 
+  // Calculate signal quality based on all ECG data from the entire session
+  const signalQuality = useMemo(() => {
+    if (!isSessionDone || activitySegments.length === 0) return undefined;
+    
+    // Get all ECG data from all segments
+    const allECG = activitySegments.reduce((acc, segment) => {
+      const segmentData = getDataForSegment(ecgHistory, segment);
+      return [...acc, ...segmentData];
+    }, [] as ECGDataPoint[]);
+    
+    // Calculate overall signal quality
+    return calculateSignalQuality(allECG);
+  }, [isSessionDone, activitySegments, ecgHistory, calculateSignalQuality]);
+
   // Only when connected and streaming
   if (!isConnected || !isECGStreaming) return null;
 
@@ -768,6 +828,8 @@ const NewRecord: React.FC<NewRecordProps> = ({
         onAddNewRecord={handleAddNewRecord}
         uploadSuccess={success}
         canUpload={!!record}
+        signalQuality={signalQuality}
+        canAdvancePhase={canAdvancePhase}
       />
 
       {error && (
