@@ -1,10 +1,31 @@
 "use client";
-import { Box, Typography, Paper, Avatar } from "@mui/material";
+import { Box, Typography, Card, CardContent, Divider, Grid, Chip } from "@mui/material";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import PersonIcon from "@mui/icons-material/Person";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import WcIcon from "@mui/icons-material/Wc";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import { useEffect, useState } from "react";
+
+// Blue theme colors
+const PRIMARY_BLUE = "#0080FF";
+const LIGHT_BLUE = "rgba(0, 128, 255, 0.08)";
+const BLUE_GRADIENT = "linear-gradient(145deg, #0080FF, #0057B3)";
 
 export default function Profile() {
   const { user } = useLocalStorage();
+  const [age, setAge] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (user?.birth_year) {
+      const currentYear = new Date().getFullYear();
+      // Fix: Convert to number only if it's a string
+      const birthYear = typeof user.birth_year === 'string' 
+        ? parseInt(user.birth_year, 10) 
+        : user.birth_year;
+      setAge(currentYear - birthYear);
+    }
+  }, [user?.birth_year]);
 
   if (!user) {
     return (
@@ -16,39 +37,110 @@ export default function Profile() {
 
   return (
     <Box sx={{ p: 3, maxWidth: 600, mx: "auto" }}>
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}>
-          <Avatar sx={{ width: 80, height: 80, bgcolor: "primary.main", mb: 2 }}>
-            <PersonIcon sx={{ fontSize: 40 }} />
-          </Avatar>
-          <Typography variant="h5" gutterBottom>
+      <Card elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+        {/* Header/Banner */}
+        <Box 
+          sx={{ 
+            height: 80, 
+            bgcolor: PRIMARY_BLUE, 
+            background: BLUE_GRADIENT,
+            position: 'relative'
+          }}
+        />
+
+        <CardContent sx={{ textAlign: 'center', pt: 3 }}>
+          <Typography variant="h4" sx={{ fontWeight: 600 }}>
             {user.user_name}
           </Typography>
-        </Box>
+          
+          <Box sx={{ my: 2 }}>
+            <Chip 
+              icon={<FavoriteBorderIcon />} 
+              label="Rhythmi User" 
+              sx={{ 
+                fontWeight: 500,
+                color: PRIMARY_BLUE,
+                borderColor: PRIMARY_BLUE,
+                '& .MuiChip-icon': {
+                  color: PRIMARY_BLUE
+                }
+              }}
+              variant="outlined"
+            />
+          </Box>
+          
+          <Divider sx={{ my: 3 }} />
+          
+          {/* Side-by-side user information */}
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' }, 
+              gap: 2, 
+              width: '100%' 
+            }}>
+              {/* Username */}
+              <Box sx={{ 
+                flex: 1,
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center',
+                p: 2,
+                borderRadius: 2,
+                backgroundColor: LIGHT_BLUE,
+              }}>
+                <PersonIcon sx={{ fontSize: 28, mb: 1, color: PRIMARY_BLUE }} />
+                <Typography variant="body2" color="text.secondary">
+                  Username
+                </Typography>
+                <Typography variant="subtitle1" fontWeight="medium">
+                  {user.user_name}
+                </Typography>
+              </Box>
+              
+              {/* Birth Year */}
+              <Box sx={{ 
+                flex: 1,
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center',
+                p: 2,
+                borderRadius: 2,
+                backgroundColor: LIGHT_BLUE,
+              }}>
+                <CalendarMonthIcon sx={{ fontSize: 28, mb: 1, color: PRIMARY_BLUE }} />
+                <Typography variant="body2" color="text.secondary">
+                  Birth Year
+                </Typography>
+                <Typography variant="subtitle1" fontWeight="medium">
+                  {user.birth_year} {age && `(${age} years)`}
+                </Typography>
+              </Box>
+              
+              {/* Gender */}
+              <Box sx={{ 
+                flex: 1,
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center',
+                p: 2,
+                borderRadius: 2,
+                backgroundColor: LIGHT_BLUE,
+              }}>
+                <WcIcon sx={{ fontSize: 28, mb: 1, color: PRIMARY_BLUE }} />
+                <Typography variant="body2" color="text.secondary">
+                  Gender
+                </Typography>
+                <Typography variant="subtitle1" fontWeight="medium">
+                  {user.gender.charAt(0).toUpperCase() + user.gender.slice(1)}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+          
 
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" color="textSecondary">
-            Username
-          </Typography>
-          <Typography variant="body1">{user.user_name}</Typography>
-        </Box>
-        
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" color="textSecondary">
-            Birth Year
-          </Typography>
-          <Typography variant="body1">{user.birth_year}</Typography>
-        </Box>
-        
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" color="textSecondary">
-            Gender
-          </Typography>
-          <Typography variant="body1">
-            {user.gender.charAt(0).toUpperCase() + user.gender.slice(1)}
-          </Typography>
-        </Box>
-      </Paper>
+        </CardContent>
+      </Card>
     </Box>
   );
 }

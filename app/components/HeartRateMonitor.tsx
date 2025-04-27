@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Button,
@@ -8,6 +8,7 @@ import {
   Box,
   Card,
   CardContent,
+  CircularProgress,
 } from "@mui/material";
 
 interface MonitorControlsProps {
@@ -31,30 +32,58 @@ const HeartRateMonitor: React.FC<MonitorControlsProps> = ({
   error,
   heartRate,
 }) => {
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isStartingStream, setIsStartingStream] = useState(false);
+  
+  // Safe connect function with error handling
+  const handleConnect = async () => {
+    try {
+      setIsConnecting(true);
+      await connect();
+    } catch (err) {
+      console.error("Connection error in HeartRateMonitor:", err);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+  
+  // Safe start ECG function with error handling
+  const handleStartECG = async () => {
+    try {
+      setIsStartingStream(true);
+      await startECGStream();
+    } catch (err) {
+      console.error("ECG Stream error in HeartRateMonitor:", err);
+    } finally {
+      setIsStartingStream(false);
+    }
+  };
+
   // Auto-start ECG stream when connected
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
-    if (isConnected && !isECGStreaming) {
+    if (isConnected && !isECGStreaming && !isStartingStream) {
       timer = setTimeout(() => {
-        startECGStream();
-      }, 2000); // 2 second = 2000 ms
+        handleStartECG();
+      }, 1000); // Reduced to 1 second delay
     }
     return () => {
       if (timer) clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected]);
+  }, [isConnected, isECGStreaming]);
 
   // Not connected: Show Connect button
   if (!isConnected) {
     return (
-      <Box display="flex" justifyContent="center" width="100%">
+      <Box display="flex" flexDirection="column" alignItems="center" width="100%">
         <Button
-          onClick={connect}
+          onClick={handleConnect}
           variant="contained"
           color="primary"
           fullWidth
           size="large"
+          disabled={isConnecting}
           sx={{
             borderRadius: "999px",
             fontWeight: 600,
@@ -72,13 +101,26 @@ const HeartRateMonitor: React.FC<MonitorControlsProps> = ({
             },
           }}
         >
-          Connect to Polar H10
+          {isConnecting ? (
+            <>
+              <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+              Connecting...
+            </>
+          ) : (
+            "Connect to Polar H10"
+          )}
         </Button>
+        {error && (
+          <Alert severity="error" variant="outlined" sx={{ mb: 2, width: "100%", maxWidth: 400 }}>
+            <Typography fontWeight="bold">Connection Error</Typography>
+            <Typography variant="body2">{error}</Typography>
+          </Alert>
+        )}
       </Box>
     );
   }
 
-  // Connected: Show heart rate, disconnect, stop stream
+  // Connected: Show heart rate and disconnect button
   return (
     <Box maxWidth={480} mx="auto" mt={2}>
       <Card>
@@ -102,38 +144,22 @@ const HeartRateMonitor: React.FC<MonitorControlsProps> = ({
                 Heart Rate:
               </Typography>
               <Typography variant="h4" color="primary" fontWeight="bold">
-                {heartRate ? `${heartRate} BPM` : "Waiting..."}
+                {heartRate ? `${heartRate} BPM` : isStartingStream ? "Starting..." : "Waiting..."}
               </Typography>
             </Box>
-            <Stack direction="row" spacing={2}>
-              <Button
-                onClick={disconnect}
-                variant="contained"
-                color="error"
-                fullWidth
-                sx={{
-                  borderRadius: "999px",
-                  fontWeight: 600,
-                  boxShadow: "none",
-                }}
-              >
-                Disconnect
-              </Button>
-              {/* <Button
-                onClick={stopECGStream}
-                variant="contained"
-                color="warning"
-                fullWidth
-                disabled={!isECGStreaming}
-                sx={{
-                  borderRadius: "999px",
-                  fontWeight: 600,
-                  boxShadow: "none",
-                }}
-              >
-                Stop ECG Stream
-              </Button> */}
-            </Stack>
+            <Button
+              onClick={disconnect}
+              variant="contained"
+              color="error"
+              fullWidth
+              sx={{
+                borderRadius: "999px",
+                fontWeight: 600,
+                boxShadow: "none",
+              }}
+            >
+              Disconnect
+            </Button>
           </Stack>
         </CardContent>
       </Card>
