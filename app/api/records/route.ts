@@ -28,8 +28,8 @@ const RecordSchema = new mongoose.Schema({
     type: String, 
     required: true,
     // Convert to string to ensure consistent comparison
-    get: v => String(v),
-    set: v => String(v) 
+    get: (v: any) => String(v),
+    set: (v: any) => String(v) 
   },
   datetime: { type: Date, required: true },
   ecg: [{
