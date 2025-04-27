@@ -10,6 +10,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 import { ECGDataPoint } from "@/types/types";
 
@@ -20,7 +21,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 interface ECGChartProps {
@@ -37,7 +39,13 @@ const ECGChart: React.FC<ECGChartProps> = ({
 
   const formatTimestamp = (timestamp: number): string => {
     try {
-      return new Date(timestamp).toISOString();
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
     } catch (error) {
       console.error("Invalid timestamp:", timestamp);
       console.error(error);
@@ -54,7 +62,7 @@ const ECGChart: React.FC<ECGChartProps> = ({
 
   const ecgChartData = {
     labels: visibleData.map(
-      (point, index) => formatTimestamp(point.timestamp) || index.toString()
+      (point) => formatTimestamp(point.timestamp)
     ),
     datasets: [
       {
@@ -62,12 +70,17 @@ const ECGChart: React.FC<ECGChartProps> = ({
         data: visibleData.map((point) => point.value),
         borderColor: "rgb(75, 192, 192)",
         backgroundColor: "rgba(75, 192, 192, 0.5)",
+        pointRadius: 1.5,
+        pointHoverRadius: 3,
+        borderWidth: 1.5,
+        tension: 0.1,
       },
     ],
   };
 
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: "top" as const,
@@ -76,6 +89,13 @@ const ECGChart: React.FC<ECGChartProps> = ({
         display: true,
         text: "ECG Data",
       },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `Value: ${context.parsed.y} µV`;
+          }
+        }
+      }
     },
     scales: {
       x: {
@@ -84,6 +104,10 @@ const ECGChart: React.FC<ECGChartProps> = ({
           display: true,
           text: "Time",
         },
+        ticks: {
+          autoSkip: true,
+          maxTicksLimit: 15
+        }
       },
       y: {
         title: {
@@ -95,7 +119,7 @@ const ECGChart: React.FC<ECGChartProps> = ({
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "800px" }}>
+    <div style={{ width: "100%", height: "300px", margin: "10px auto" }}>
       <Line options={chartOptions} data={ecgChartData} />
     </div>
   );

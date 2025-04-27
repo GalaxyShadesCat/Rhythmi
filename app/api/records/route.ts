@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
+import { MongoClient } from 'mongodb';
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
 if (!MONGODB_URI) {
@@ -23,7 +24,13 @@ async function dbConnect() {
 
 // Define schema based on your RecordData interface
 const RecordSchema = new mongoose.Schema({
-  user_id: { type: String, required: true },
+  user_id: { 
+    type: String, 
+    required: true,
+    // Convert to string to ensure consistent comparison
+    get: v => String(v),
+    set: v => String(v) 
+  },
   datetime: { type: Date, required: true },
   ecg: [{
     timestamp: { type: Number, required: true },
@@ -95,19 +102,28 @@ export async function GET(request: Request) {
   }
 
   try {
-    await dbConnect();
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
     
-    const records = await Record.find({ user_id })
-      .sort({ datetime: -1 }) // Newest first
-      .lean(); // Convert to plain JS objects
+    const db = client.db('database');
+    const recordsCollection = db.collection('records');
 
+    // Ensure user_id is properly stringified
+    const userId = String(user_id);
+    
+    // Query only records matching this specific user_id
+    const records = await recordsCollection.find({
+      user_id: userId
+    }).sort({ datetime: -1 }).toArray();
+    
+    await client.close();
     return NextResponse.json({ success: true, data: records });
+    
   } catch (error) {
     let errorMessage = 'Failed to fetch records';
     if (error instanceof Error) {
       errorMessage = error.message;
     }
-    console.error('Error fetching records:', error);
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }
