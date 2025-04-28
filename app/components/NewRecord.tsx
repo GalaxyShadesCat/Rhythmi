@@ -27,6 +27,7 @@ import {
   RecordData,
   User,
   ECGMetrics,
+  PHASE_COLORS,
 } from "@/types/types";
 import {
   Chart,
@@ -45,6 +46,7 @@ import { useMongoDB } from "../hooks/useMongoDB";
 import ECGChart from "./ECGChart";
 import useSignalQuality from "@/hooks/useSignalQuality";
 import { TextField } from "@mui/material";
+import HRPhaseChart from "./HRPhaseChart";
 
 // --- Constants and Helpers ---
 
@@ -53,11 +55,6 @@ const PHASE_LABELS: Record<ActivityType, string> = {
   rest: "Rest",
   exercise: "Exercise",
   recovery: "Recovery",
-};
-const PHASE_COLORS: Record<ActivityType, string> = {
-  rest: "#a5b4fc",
-  exercise: "#bbf7d0",
-  recovery: "#fdba74",
 };
 const PHASE_ICONS: Record<ActivityType, JSX.Element> = {
   rest: <RestoreIcon />,
@@ -178,161 +175,6 @@ const HRRTable: React.FC<{
     </Table>
   </div>
 );
-
-// --- HR Chart with live recovery coloring ---
-interface HRPhasesChartProps {
-  hrHistory: HRDataPoint[];
-  activitySegments: ActivitySegment[];
-  showPhases: boolean;
-  firstPhaseStart: number | null;
-  recoveryEnd: number | null;
-  isFrozen: boolean;
-  phaseIdx: number;
-  phaseStart: number | null;
-}
-const HRPhasesChart: React.FC<HRPhasesChartProps> = ({
-  hrHistory,
-  activitySegments,
-  showPhases,
-  firstPhaseStart,
-  recoveryEnd,
-  isFrozen,
-  phaseIdx,
-  phaseStart,
-}) => {
-  const chartRef = useRef<HTMLCanvasElement>(null);
-  const chartInstanceRef = useRef<Chart | null>(null);
-
-  // Get first and last activity times
-  const firstActivityStart =
-    activitySegments.length > 0 ? activitySegments[0].start : null;
-  const lastActivityEnd =
-    activitySegments.length > 0
-      ? activitySegments[activitySegments.length - 1].end
-      : null;
-
-  // Filter HR data based on activity segment times
-  const filteredHR = useMemo(() => {
-    if (firstActivityStart === null || lastActivityEnd === null) return [];
-    return hrHistory.filter(
-      (p) => p.timestamp >= firstActivityStart && p.timestamp <= lastActivityEnd
-    );
-  }, [hrHistory, firstActivityStart, lastActivityEnd]);
-
-  // Dynamically add recovery segment if in recovery phase (not yet ended)
-  const allRegions = useMemo(() => {
-    const regions: { start: number; end: number; type: ActivityType }[] = [
-      ...activitySegments,
-    ];
-    // If currently in recovery, add ongoing segment
-    if (
-      showPhases &&
-      phaseIdx === 2 && // index for "recovery"
-      phaseStart &&
-      (!recoveryEnd || recoveryEnd < phaseStart)
-    ) {
-      regions.push({
-        type: "recovery",
-        start: phaseStart,
-        end: recoveryEnd || Date.now(),
-      });
-    }
-    return regions;
-  }, [activitySegments, showPhases, phaseIdx, phaseStart, recoveryEnd]);
-
-  const { labels, data, regions } = useMemo(() => {
-    if (!filteredHR.length) return { labels: [], data: [], regions: [] };
-    const labels = filteredHR.map((p) =>
-      new Date(p.timestamp).toLocaleTimeString().slice(3, 8)
-    );
-    const data = filteredHR.map((p) => p.value);
-    return { labels, data, regions: allRegions };
-  }, [filteredHR, allRegions]);
-
-  useEffect(() => {
-    if (!chartRef.current) return;
-    if (chartInstanceRef.current) chartInstanceRef.current.destroy();
-
-    const backgroundPlugin = {
-      id: "phaseBackground",
-      beforeDraw: (chart: Chart) => {
-        if (!regions.length || !showPhases) return;
-        const { ctx, chartArea, scales } = chart as any;
-        if (!chartArea) return;
-        for (const region of regions) {
-          const idxStart = filteredHR.findIndex(
-            (h) => h.timestamp >= region.start
-          );
-          const idxEnd = filteredHR.findIndex((h) => h.timestamp >= region.end);
-          if (idxStart === -1 || idxEnd === -1) continue;
-          const xStart = scales.x.getPixelForValue(labels[idxStart]);
-          const xEnd = scales.x.getPixelForValue(labels[idxEnd]);
-          ctx.save();
-          ctx.fillStyle = PHASE_COLORS[region.type];
-          ctx.globalAlpha = 0.2;
-          ctx.fillRect(
-            xStart,
-            chartArea.top,
-            xEnd - xStart,
-            chartArea.bottom - chartArea.top
-          );
-          ctx.restore();
-        }
-      },
-    };
-
-    chartInstanceRef.current = new Chart(chartRef.current, {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "Heart Rate",
-            data,
-            borderColor: "#3b82f6",
-            backgroundColor: "rgba(59, 130, 246, 0.1)",
-            tension: 0.3,
-            pointRadius: 0,
-            fill: false,
-          },
-        ],
-      },
-      options: {
-        animation: false,
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            title: { display: false },
-            ticks: { maxTicksLimit: 9 },
-            grid: { display: false },
-          },
-          y: { beginAtZero: false, ticks: { precision: 0 } },
-        },
-        plugins: { legend: { display: false } },
-      },
-      plugins: [backgroundPlugin],
-    });
-  }, [labels, data, regions, filteredHR, showPhases, isFrozen]);
-
-  return (
-    <div
-      style={{
-        background: "#f8fafc",
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 24,
-      }}
-    >
-      <Typography variant="subtitle1" fontWeight={600} mb={1} color="primary">
-        HR Trend {showPhases ? "(colored by phase)" : ""}
-      </Typography>
-      <div style={{ position: "relative", height: 200 }}>
-        <canvas ref={chartRef} style={{ width: "100%", height: "100%" }} />
-      </div>
-    </div>
-  );
-};
 
 // --- RecordSummaryCard ---
 interface RecordSummaryCardProps {
@@ -517,7 +359,7 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
           <Button
             variant="contained"
             color="primary"
-            startIcon={<UploadIcon />}
+            // startIcon={<UploadIcon />}
             onClick={uploadSuccess ? onAddNewRecord : onUpload}
             size="large"
             disabled={uploading || (!uploadSuccess && !canUpload)}
@@ -950,17 +792,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
       {hrrPoints.length > 0 && <HRRTable hrrPoints={hrrPoints} />}
 
       <ECGChart ecgData={ecgHistory}></ECGChart>
-
-      <HRPhasesChart
-        hrHistory={hrHistory}
-        activitySegments={activitySegments}
-        showPhases={allDone}
-        firstPhaseStart={firstPhaseStart}
-        recoveryEnd={recoveryEnd}
-        isFrozen={allDone}
-        phaseIdx={phaseIdx}
-        phaseStart={phaseStart}
-      />
+      {record && <HRPhaseChart record={record} />}
       <Box display="flex" justifyContent="center" mt={4} mb={2}>
         <Button
           variant="outlined"

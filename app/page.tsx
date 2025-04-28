@@ -38,6 +38,7 @@ export default function Home() {
   const [navIndex, setNavIndex] = useState(0);
   const [openChat, setOpenChat] = useState(false);
   const [records, setRecords] = useState<RecordData[]>([]);
+  const [chatRecord, setChatRecord] = useState<RecordData | null>(null);
 
   // --------------------------------------------------------
   // SIMULATION MODE - Comment out this block before deployment
@@ -109,6 +110,9 @@ export default function Home() {
               user_name={user.user_name}
               records={records}
               setRecords={setRecords}
+              chatRecord={chatRecord}
+              setChatRecord={setChatRecord}
+              setOpenChat={setOpenChat}
             />
           </Box>
         );
@@ -261,7 +265,12 @@ export default function Home() {
             height: { xs: "100%", sm: 550 },
           }}
         >
-          <HealthChatbot user={user} setOpenChat={setOpenChat} />
+          <HealthChatbot
+            user={user}
+            setOpenChat={setOpenChat}
+            selectedRecord={chatRecord}
+            records={records}
+          />
         </Box>
       </Slide>
     </Box>

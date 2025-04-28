@@ -60,3 +60,9 @@ export interface ActivitySegment {
   start: number;
   end: number;
 }
+
+export const PHASE_COLORS: Record<ActivityType, string> = {
+  rest: "#a5b4fc",
+  exercise: "#bbf7d0",
+  recovery: "#fdba74",
+};

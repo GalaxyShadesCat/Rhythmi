@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useMongoDB } from "@/hooks/useMongoDB";
-import { RecordData, ECGMetrics, HRRPoint, ActivityType } from "@/types/types";
+import { RecordData, ECGMetrics, HRRPoint } from "@/types/types";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,9 +12,11 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-
+import annotationPlugin from "chartjs-plugin-annotation";
+import HRPhaseChart from "@/components/HRPhaseChart";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -21,20 +24,41 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler,
+  annotationPlugin
 );
 
 interface FetchHistoryProps {
   user_name: string;
   records: RecordData[];
   setRecords: React.Dispatch<React.SetStateAction<RecordData[]>>;
+  chatRecord: RecordData | null;
+  setChatRecord: React.Dispatch<React.SetStateAction<RecordData | null>>;
+  setOpenChat: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
+function FetchHistory({
+  user_name,
+  records,
+  setRecords,
+  chatRecord,
+  setChatRecord,
+  setOpenChat,
+}: FetchHistoryProps) {
   const [selectedRecord, setSelectedRecord] = useState<RecordData | null>(null);
   const [visibleDataPoints, setVisibleDataPoints] = useState(500);
   const [loading, setLoading] = useState(false);
   const { getUserByUsername, error, setError } = useMongoDB();
+
+  const handleChatAboutRecord = (record: RecordData) => {
+    if (chatRecord?._id === record._id) {
+      setChatRecord(null);
+    } else {
+      setChatRecord(record);
+      setOpenChat(true);
+    }
+  };
 
   const fetchRecords = async () => {
     setError(null);
@@ -127,7 +151,7 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
       ],
     };
   };
-  
+
   const renderMetrics = (metrics: ECGMetrics, title: string) => (
     <div className="bg-gray-50 p-3 rounded-lg mb-3">
       <h4 className="font-medium text-gray-800 mb-2">{title}</h4>
@@ -309,6 +333,16 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
 
                 {selectedRecord?._id === record._id && (
                   <div className="mt-4 space-y-4">
+                    <button
+                      onClick={() => handleChatAboutRecord(record)}
+                      className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded text-sm whitespace-nowrap transition flex items-center"
+                    >
+                      Discuss This Record
+                      <ChatBubbleOutlineIcon
+                        className="ml-1"
+                        fontSize="small"
+                      />
+                    </button>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {renderMetrics(record.rest_metrics, "Rest Metrics")}
                       {renderMetrics(
@@ -334,6 +368,8 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
                         </div>
                       </div>
                     )}
+
+                    {selectedRecord && <HRPhaseChart record={selectedRecord} />}
 
                     <div className="mt-4">
                       <h4 className="font-medium text-gray-800 mb-2">
