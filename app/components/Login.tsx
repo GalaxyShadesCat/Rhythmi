@@ -147,7 +147,7 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
           sx={{ width: "100%", mt: 2, px: 3, py: 4, borderRadius: 2 }}
         >
           <TextField
-            label="ID"
+            label="Username"
             name="user_name"
             fullWidth
             value={formData.user_name}

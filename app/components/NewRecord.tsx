@@ -44,6 +44,7 @@ import { getDataForSegment } from "../utils/phaseData";
 import { useMongoDB } from "../hooks/useMongoDB";
 import ECGChart from "./ECGChart";
 import useSignalQuality from "@/hooks/useSignalQuality";
+import { TextField } from "@mui/material";
 
 // --- Constants and Helpers ---
 
@@ -603,6 +604,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
   const { uploadRecord, loading, error, success } = useMongoDB();
   const [hasUploaded, setHasUploaded] = useState(false);
   const { calculateSignalQuality } = useSignalQuality();
+  const [notes, setNotes] = useState("");
 
   const currentPhase = PHASES[phaseIdx];
   const restSegment = activitySegments.find((s) => s.type === "rest");
@@ -666,7 +668,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
       activitySegments.length === 0
     )
       return null;
-
+  
     const overallStart =
       activitySegments.length > 0
         ? Math.min(...activitySegments.map((seg) => seg.start))
@@ -681,7 +683,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
             (d) => d.timestamp >= overallStart && d.timestamp <= overallEnd
           )
         : [];
-
+  
     const relevantHR =
       overallStart !== null && overallEnd !== null
         ? hrHistory.filter(
@@ -698,6 +700,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
       recovery_metrics: recoveryMetrics,
       activity_segments: activitySegments,
       hrr_points: hrrPoints,
+      notes: notes, // Add this line
     };
   }, [
     user,
@@ -708,6 +711,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     exerciseMetrics,
     recoveryMetrics,
     hrrPoints,
+    notes, 
   ]);
 
   const handleUpload = () => {
@@ -727,6 +731,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     setPhaseStartHistory([]);
     setHasUploaded(false);
     setRecoveryEnd(null);
+    setNotes("");
   };
 
   const segmentStats = useMemo(
@@ -882,6 +887,25 @@ const NewRecord: React.FC<NewRecordProps> = ({
         <Stack spacing={2} mt={2}>
           <Alert severity="success">Upload successful!</Alert>
         </Stack>
+      )}
+
+      {isSessionDone && (
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography variant="h6" mb={2}>
+              Session Notes
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              placeholder="Enter any notes about this session (e.g. 'Jogging at 6km/h', 'Drank coffee 30 mins before', 'Felt tired')"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </CardContent>
+        </Card>
       )}
 
       <RecordSummaryCard

@@ -6,7 +6,15 @@ export default function useSignalQuality() {
   const calculateSignalQuality = (data: ECGDataPoint[]): QualityRating => {
     if (data.length === 0) return "poor";
 
-    const values = data.map(point => point.value);
+    const sampleRate = 130; // 130Hz
+    const fiveSecondsOfData = sampleRate * 5;
+    
+    // Get only the most recent 5 seconds of data
+    const recentData = data.length > fiveSecondsOfData 
+      ? data.slice(-fiveSecondsOfData)
+      : data;
+
+    const values = recentData.map(point => point.value);
 
     // Calculate standard deviation
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
@@ -14,9 +22,9 @@ export default function useSignalQuality() {
     const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
     const standardDeviation = Math.sqrt(variance);
 
-    if (standardDeviation < 0.1) return "excellent";
-    if (standardDeviation < 0.2) return "good";
-    if (standardDeviation < 0.5) return "fair";
+    if (standardDeviation < 10) return "excellent";
+    if (standardDeviation < 20) return "good";
+    if (standardDeviation < 30) return "fair";
     return "poor";
   };
 

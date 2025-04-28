@@ -113,7 +113,7 @@ export default function Profile() {
                   Birth Year
                 </Typography>
                 <Typography variant="subtitle1" fontWeight="medium">
-                  {user.birth_year} {age && `(${age} years)`}
+                  {user.birth_year} {age && `(${age} y/o)`}
                 </Typography>
               </Box>
               

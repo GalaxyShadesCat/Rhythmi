@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useMongoDB } from "@/hooks/useMongoDB";
-import { RecordData } from "@/types/types";
+import { RecordData, ECGMetrics, HRRPoint, ActivityType } from "@/types/types";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -106,6 +106,60 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
     };
   };
 
+  const formatHRRChartData = (hrrPoints: HRRPoint[]) => {
+    return {
+      labels: hrrPoints.map((point) => `${point.time}s`),
+      datasets: [
+        {
+          label: "Heart Rate (bpm)",
+          data: hrrPoints.map((point) => point.hr),
+          borderColor: "rgb(255, 99, 132)",
+          backgroundColor: "rgba(255, 99, 132, 0.5)",
+          tension: 0.1,
+        },
+        {
+          label: "HRR (bpm)",
+          data: hrrPoints.map((point) => point.hrr),
+          borderColor: "rgb(54, 162, 235)",
+          backgroundColor: "rgba(54, 162, 235, 0.5)",
+          tension: 0.1,
+        },
+      ],
+    };
+  };
+
+  const renderMetrics = (metrics: ECGMetrics, title: string) => (
+    <div className="bg-gray-50 p-3 rounded-lg mb-3">
+      <h4 className="font-medium text-gray-800 mb-2">{title}</h4>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <span className="text-gray-500">Avg HR:</span>{" "}
+          <span className="font-medium">{Math.round(metrics.avgHeartRate)} bpm</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Min HR:</span>{" "}
+          <span className="font-medium">{Math.round(metrics.minHeartRate)} bpm</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Max HR:</span>{" "}
+          <span className="font-medium">{Math.round(metrics.maxHeartRate)} bpm</span>
+        </div>
+        <div>
+          <span className="text-gray-500">HRV:</span>{" "}
+          <span className="font-medium">{Math.round(metrics.heartRateVariability)} ms</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Total Beats:</span>{" "}
+          <span className="font-medium">{metrics.totalBeats}</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Duration:</span>{" "}
+          <span className="font-medium">{Math.round(metrics.duration / 1000)} s</span>
+        </div>
+      </div>
+    </div>
+  );
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -137,6 +191,34 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
         title: {
           display: true,
           text: "ECG Value (µV)",
+        },
+      },
+    },
+  };
+
+  const hrrChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      title: {
+        display: true,
+        text: "Heart Rate Recovery",
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: "Time since recovery start (seconds)",
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Value (bpm)",
         },
       },
     },
@@ -195,11 +277,12 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
                         hour12: false,
                       })}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      ECG Points: {record.ecg.length} | HR Points:{" "}
-                      {record.hr.length}
-                    </p>
-                  </div>
+                    {record.notes && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded">
+                        <p className="font-medium">Notes: {record.notes}</p>
+                      </div>
+                    )}
+                    </div>
                   <button
                     onClick={() =>
                       setSelectedRecord(
@@ -209,18 +292,41 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
                     className="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm"
                   >
                     {selectedRecord?._id === record._id
-                      ? "Hide ECG"
-                      : "Show ECG"}
+                      ? "Hide Details"
+                      : "Show Details"}
                   </button>
                 </div>
 
                 {selectedRecord?._id === record._id && (
-                  <div className="mt-4">
-                    <div className="h-64 w-full">
-                      <Line
-                        options={chartOptions}
-                        data={formatECGChartData(record.ecg)}
-                      />
+                  <div className="mt-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {renderMetrics(record.rest_metrics, "Rest Metrics")}
+                      {renderMetrics(record.exercise_metrics, "Exercise Metrics")}
+                      {renderMetrics(record.recovery_metrics, "Recovery Metrics")}
+                    </div>
+
+                    {record.hrr_points && record.hrr_points.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="font-medium text-gray-800 mb-2">
+                          Heart Rate Recovery
+                        </h4>
+                        <div className="h-64 w-full">
+                          <Line
+                            options={hrrChartOptions}
+                            data={formatHRRChartData(record.hrr_points)}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-4">
+                      <h4 className="font-medium text-gray-800 mb-2">ECG Signal</h4>
+                      <div className="h-64 w-full">
+                        <Line
+                          options={chartOptions}
+                          data={formatECGChartData(record.ecg)}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
