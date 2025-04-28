@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { marked } from "marked";
-import { User } from "@/types/types";
+import { RecordData, User } from "@/types/types";
 
 const getRandom = (min: number, max: number) =>
   Math.round((Math.random() * (max - min) + min) * 100) / 100;
@@ -23,57 +23,75 @@ const metricGuidelines = `
 |--------|---------------|------------------|------------------|
 | Average Heart Rate | 60–100 bpm | <60, >100 | Bradycardia, Tachycardia |
 | Heart Rate Variability | 50–100 ms | <30 ms | High stress, cardiovascular risk |
-| QT Interval | 350–450 ms | >450 ms | Risk of arrhythmias |
-| ST Segment Elevation | <0.1 mV | >0.1 mV | Possible heart attack |
-| R Peaks | Varies | Irregular spacing | Arrhythmias |
-| QRS Complex Duration | 80–120 ms | >120 ms | Ventricular arrhythmias |
-| QRS Complex Amplitude | 0.5–2.5 mV | <0.5, >2.5 | Low/high voltage |
 | Heart Rate Recovery | >18 bpm | <12 bpm | Poor fitness |
-| ST Deviation | <0.05 mV | >0.05 mV | Ischemia |
-| HRV Change | Varies | Large negative | Fatigue, stress |
-| QT Change | <30 ms | >30 ms | Drug/electrolyte effects |
 `;
 
 type HealthChatbotProps = {
   user: User;
   setOpenChat: (open: boolean) => void;
+  selectedRecord: RecordData | null;
+  records: RecordData[];
 };
 
-function HealthChatbot({ user, setOpenChat }: HealthChatbotProps) {
+function HealthChatbot({
+  user,
+  setOpenChat,
+  selectedRecord,
+  records,
+}: HealthChatbotProps) {
   const [input, setInput] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const dummyMetrics = React.useMemo(() => {
-    return Array.from({ length: 5 }, () => ({
-      averageHeartRate: getRandom(60, 100), // bpm
-      heartRateVariability: getRandom(50, 100), // ms
-      qtInterval: getRandom(370, 440), // ms
-      stSegment: {
-        elevation: getRandom(0.01, 0.09), // mV
-        duration: getRandom(100, 160), // ms
-      },
-      rPeaks: [1000, 2000, 3000, 4000, 5000],
-      qrsComplex: {
-        duration: getRandom(80, 120),
-        amplitude: getRandom(0.5, 2.0),
-      },
-      heartRateRecovery: getRandom(18, 25),
-      stDeviation: getRandom(0.01, 0.04),
-      hrvChange: getRandom(-10, 10),
-      qtChange: getRandom(5, 25),
-    }));
-  }, []);
+  function formatRecord(record: RecordData) {
+    return `
+  Date: ${record.datetime}
+  Rest: HR: ${record.rest_metrics.avgHeartRate}, HRV: ${
+      record.rest_metrics.heartRateVariability
+    }, Duration: ${(record.rest_metrics.duration / 60000).toFixed(1)}mins
+  Exercise: HR: ${record.exercise_metrics.avgHeartRate}, HRV: ${
+      record.exercise_metrics.heartRateVariability
+    }, Duration: ${(record.exercise_metrics.duration / 60000).toFixed(1)}mins
+  Recovery: HR: ${record.recovery_metrics.avgHeartRate}, HRV: ${
+      record.recovery_metrics.heartRateVariability
+    }, Duration: ${(record.recovery_metrics.duration / 60000).toFixed(1)}mins
+  Heart Rate Recovery: ${
+    record.hrr_points
+      ?.map(
+        (point) =>
+          `\n    Time after exercise: ${point.time}s, HR: ${point.hr}, HRR: ${point.hrr}`
+      )
+      .join(",") || "N/A"
+  }
+  `;
+  }
+  const recordsString = useMemo(() => {
+    const latestRecords = records.slice(-5);
+    if (selectedRecord) {
+      return formatRecord(selectedRecord);
+    } else {
+      return latestRecords.map(formatRecord).join("\n");
+    }
+  }, [records, selectedRecord]);
 
-  const SYSTEM_PROMPT = React.useRef({
-    role: "system",
-    content: `You are a helpful health assistant. The user will ask about their cardiovascular and ECG data. Keep your responses short and simple. Reference the following medical metric guidelines:\n\n${metricGuidelines}\n\nUser Info:\nUser Name: ${
-      user.user_name
-    }\nGender: ${user.gender}\nBirth Year: ${
-      user.birth_year
-    }\n\nRecent ECG Metrics:\n${JSON.stringify(dummyMetrics, null, 2)}`,
-  });
+  const age = new Date().getFullYear() - user.birth_year;
+  const SYSTEM_PROMPT = useMemo(
+    () => ({
+      role: "system",
+      content: `You are a helpful health assistant. The user will ask about their cardiovascular and ECG data. Keep your responses short and simple. Reference the following medical metric guidelines:\n\n${metricGuidelines}\n\nUser Info:\nUsername: ${user.user_name}\nGender: ${user.gender}\nBirth Year: ${user.birth_year}\nAge: ${age}\n\nRecent Records:\n${recordsString}\n\nThese records were collected when a user wore a Polar H10 heart rate sensor where they were at rest, exercise/walk for 5 to 6 minutes and then recovered while monitoring their heart rate recovery. If the durations are too short, the data may not be accurate. The user may ask about their heart rate, heart rate variability, and other metrics. You can also provide general health tips based on the user's data. If the user asks about a specific metric, provide a brief explanation and its normal range. If the user asks about their health, provide general advice based on their data. If the user asks about a specific record, provide details about that record. If the user asks about a specific metric, provide details about that metric.`,
+    }),
+    [
+      user.user_name,
+      user.gender,
+      user.birth_year,
+      age,
+      metricGuidelines,
+      recordsString,
+    ]
+  );
+
+  console.log("System prompt:", SYSTEM_PROMPT.content);
 
   // Load messages on mount
   useEffect(() => {
@@ -124,7 +142,7 @@ function HealthChatbot({ user, setOpenChat }: HealthChatbotProps) {
         },
         body: JSON.stringify({
           model: "microsoft/mai-ds-r1:free",
-          messages: [SYSTEM_PROMPT.current, ...updatedMessages.slice(-10)],
+          messages: [SYSTEM_PROMPT, ...updatedMessages.slice(-10)],
         }),
       });
 
@@ -152,6 +170,11 @@ function HealthChatbot({ user, setOpenChat }: HealthChatbotProps) {
     }
   };
 
+  const handleClearChat = () => {
+    setMessages([]);
+    localStorage.removeItem("chat_messages");
+  };
+
   return (
     <Box
       sx={{
@@ -172,9 +195,33 @@ function HealthChatbot({ user, setOpenChat }: HealthChatbotProps) {
       >
         <Toolbar sx={{ justifyContent: "space-between" }}>
           <Typography variant="h6">🩺 Health Chatbot</Typography>
-          <IconButton edge="end" onClick={() => setOpenChat(false)}>
-            <CloseIcon />
-          </IconButton>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {/* ---- Clear Chat Button ---- */}
+            <Button
+              variant="outlined"
+              color="secondary"
+              size="small"
+              onClick={handleClearChat}
+              sx={{
+                borderColor: "#bbb",
+                color: "#333",
+                textTransform: "none",
+                px: 1.5,
+                py: 0.5,
+                fontSize: "0.85rem",
+                "&:hover": {
+                  bgcolor: "#f5f5f5",
+                  borderColor: "#888",
+                },
+              }}
+            >
+              New Chat
+            </Button>
+            {/* ---- Close Icon ---- */}
+            <IconButton edge="end" onClick={() => setOpenChat(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
         </Toolbar>
       </AppBar>
 
