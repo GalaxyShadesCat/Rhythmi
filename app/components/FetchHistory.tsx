@@ -26,10 +26,11 @@ ChartJS.register(
 
 interface FetchHistoryProps {
   user_name: string;
+  records: RecordData[];
+  setRecords: React.Dispatch<React.SetStateAction<RecordData[]>>;
 }
 
-function FetchHistory({ user_name }: FetchHistoryProps) {
-  const [records, setRecords] = useState<RecordData[]>([]);
+function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
   const [selectedRecord, setSelectedRecord] = useState<RecordData | null>(null);
   const [visibleDataPoints, setVisibleDataPoints] = useState(500);
   const [loading, setLoading] = useState(false);
@@ -38,37 +39,40 @@ function FetchHistory({ user_name }: FetchHistoryProps) {
   const fetchRecords = async () => {
     setError(null);
     setLoading(true);
-    
+
     try {
       const user = await getUserByUsername(user_name);
-      
+
       if (!user || !user._id) {
         setError("User not found or missing ID");
         return;
       }
-      
+
       const userId = user._id;
-      
-      const response = await fetch(`/api/records?user_id=${encodeURIComponent(userId)}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-  
+
+      const response = await fetch(
+        `/api/records?user_id=${encodeURIComponent(userId)}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
       if (!response.ok) {
         throw new Error(`Failed to fetch records: ${response.statusText}`);
       }
-  
+
       const result = await response.json();
       const recordsData = result.data || [];
-      
+
       if (!Array.isArray(recordsData)) {
         throw new Error("Invalid records data format received");
       }
-  
+
       setRecords(recordsData);
-  
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error occurred";
+      const message =
+        err instanceof Error ? err.message : "Unknown error occurred";
       setError(message);
     } finally {
       setLoading(false);
@@ -151,7 +155,7 @@ function FetchHistory({ user_name }: FetchHistoryProps) {
       </button>
 
       {error && <p className="mt-2 text-red-500">{error}</p>}
-      
+
       {records.length > 0 ? (
         <div className="mt-6 space-y-6">
           <div className="flex flex-col space-y-2">
@@ -178,19 +182,22 @@ function FetchHistory({ user_name }: FetchHistoryProps) {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-semibold">
-                      {new Date(record.datetime).toLocaleDateString('en-GB', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric' 
-                      })}, {new Date(record.datetime).toLocaleTimeString('en-GB', { 
-                        hour: '2-digit', 
-                        minute: '2-digit', 
-                        second: '2-digit',
-                        hour12: false
+                      {new Date(record.datetime).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
+                      ,{" "}
+                      {new Date(record.datetime).toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: false,
                       })}
                     </p>
                     <p className="text-sm text-gray-600">
-                      ECG Points: {record.ecg.length} | HR Points: {record.hr.length}
+                      ECG Points: {record.ecg.length} | HR Points:{" "}
+                      {record.hr.length}
                     </p>
                   </div>
                   <button
@@ -224,12 +231,27 @@ function FetchHistory({ user_name }: FetchHistoryProps) {
       ) : (
         <div className="mt-8 p-10 text-center bg-gray-50 border border-gray-100 rounded-xl shadow-sm">
           <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-blue-50">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-8 w-8 text-blue-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-1">No ECG Records Found</h3>
-          <p className="text-gray-500 mb-6">You haven&apos;t created any heart monitoring records yet.</p>
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">
+            No ECG Records Found
+          </h3>
+          <p className="text-gray-500 mb-6">
+            You haven&apos;t created any heart monitoring records yet.
+          </p>
         </div>
       )}
     </div>

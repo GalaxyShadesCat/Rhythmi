@@ -11,8 +11,6 @@ import {
   Typography,
   Fab,
   Slide,
-  Switch,
-  FormControlLabel,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -29,6 +27,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import FetchHistory from "@/components/FetchHistory";
 import Profile from "@/components/Profile";
 import NewRecord from "@/app/components/NewRecord";
+import { RecordData } from "@/types/types";
 
 // App theme colors
 const PRIMARY_BLUE = "#0080FF";
@@ -38,7 +37,8 @@ export default function Home() {
   const { user, saveUser, clearUser } = useLocalStorage();
   const [navIndex, setNavIndex] = useState(0);
   const [openChat, setOpenChat] = useState(false);
-  
+  const [records, setRecords] = useState<RecordData[]>([]);
+
   // --------------------------------------------------------
   // SIMULATION MODE - Comment out this block before deployment
   // --------------------------------------------------------
@@ -105,7 +105,11 @@ export default function Home() {
         return (
           <Box>
             <Typography variant="h6" mt={3}></Typography>
-            <FetchHistory user_name={user.user_name} />
+            <FetchHistory
+              user_name={user.user_name}
+              records={records}
+              setRecords={setRecords}
+            />
           </Box>
         );
       // New Record tab

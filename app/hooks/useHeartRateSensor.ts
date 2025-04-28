@@ -9,7 +9,7 @@ const POLAR_HR_CHARACTERISTIC_UUID = 0x2a37;
 
 // Enable simulation for development environments
 // Set this to false before production deployment
-const DEFAULT_SIMULATION = process.env.NODE_ENV === 'development';
+const DEFAULT_SIMULATION = process.env.NODE_ENV === "development";
 
 interface HeartRateSensorHook {
   connect: () => Promise<void>;
@@ -36,18 +36,18 @@ function generateSimulatedECGData(
   const result: ECGDataPoint[] = [];
   const sampleRate = 130; // 130Hz
   const interval = 1000 / sampleRate;
-  
+
   // Calculate appropriate sine wave frequency based on heart rate
   // (heart rate in bpm / 60) gives frequency in Hz
   const frequency = hrValue / 60;
-  
+
   for (let i = 0; i < count; i++) {
     const timestamp = baseTimestamp + i * interval;
     const timeInSec = i / sampleRate;
-    
+
     // Basic ECG-like pattern (simplified QRS complex)
     const sinValue = Math.sin(2 * Math.PI * frequency * timeInSec);
-    
+
     // Create more ECG-like morphology with peaked R wave
     let value = 0;
     if (sinValue > 0.8) {
@@ -60,16 +60,16 @@ function generateSimulatedECGData(
       // Baseline with some variation
       value = sinValue * 100;
     }
-    
+
     // Add some noise
     value += (Math.random() - 0.5) * 50;
-    
+
     result.push({
       timestamp,
       value,
     });
   }
-  
+
   return result;
 }
 
@@ -96,12 +96,16 @@ export function useHeartRateSensor(
   const hrUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Function to set simulation mode
-  const setSimulationMode = useCallback((enabled: boolean) => {
-    if (isConnected) {
-      disconnect();
-    }
-    setIsSimulated(enabled);
-  }, [isConnected]);
+  const setSimulationMode = useCallback(
+    (enabled: boolean) => {
+      if (isConnected) {
+        disconnect();
+      }
+      setIsSimulated(enabled);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isConnected]
+  );
 
   // Cleanup function for intervals
   const clearSimulationIntervals = useCallback(() => {
@@ -119,12 +123,12 @@ export function useHeartRateSensor(
   const disconnect = useCallback(() => {
     // Clear any simulation intervals
     clearSimulationIntervals();
-    
+
     // If using a real device, disconnect it
     if (device && device.gatt?.connected) {
       device.gatt.disconnect();
     }
-    
+
     setDevice(null);
     setCurrentHR(null);
     setIsConnected(false);
@@ -139,45 +143,51 @@ export function useHeartRateSensor(
     try {
       // Clear any existing error
       setError(null);
-      
+
       // Clean up any existing connections or simulations
       if (isConnected) {
         disconnect();
       }
-      
+
       // If in simulation mode and enabled, simulate a connection
       if (isSimulated) {
         // Start simulation for heart rate immediately
         setIsConnected(true);
         setCurrentHR(70); // Start with a resting heart rate
-        
+
         // Add initial HR point
         const hrPoint = {
           timestamp: Date.now(),
           value: 70,
         };
         setHRHistory([hrPoint]);
-        
+
         // Setup a recurring heart rate update (separate from ECG)
         const hrInterval = setInterval(() => {
           const now = Date.now();
           const baseHR = currentHR || 70;
-          const newHR = Math.max(50, Math.min(180, baseHR + (Math.random() - 0.5) * 3));
+          const newHR = Math.max(
+            50,
+            Math.min(180, baseHR + (Math.random() - 0.5) * 3)
+          );
           const roundedHR = Math.round(newHR);
-          
+
           setCurrentHR(roundedHR);
-          setHRHistory(prev => [...prev, {
-            timestamp: now,
-            value: roundedHR,
-          }]);
+          setHRHistory((prev) => [
+            ...prev,
+            {
+              timestamp: now,
+              value: roundedHR,
+            },
+          ]);
         }, 1000); // Update heart rate every second
-        
+
         hrUpdateIntervalRef.current = hrInterval;
-        
+
         setError(null);
         return;
       }
-      
+
       // Real device connection
       if (!navigator.bluetooth) {
         throw new Error("Web Bluetooth API is not supported in this browser.");
@@ -233,9 +243,7 @@ export function useHeartRateSensor(
       setPmdControlCharacteristic(
         pmdControl as BluetoothRemoteGATTCharacteristic
       );
-      setPmdDataCharacteristic(
-        pmdData as BluetoothRemoteGATTCharacteristic
-      );
+      setPmdDataCharacteristic(pmdData as BluetoothRemoteGATTCharacteristic);
 
       setIsConnected(true);
       setError(null);
@@ -257,26 +265,26 @@ export function useHeartRateSensor(
           clearInterval(simulationIntervalRef.current);
           simulationIntervalRef.current = null;
         }
-        
+
         // Clear ECG history
         setEcgHistory([]);
         setIsECGStreaming(true);
-        
+
         // Start simulation interval for ECG data
         const interval = setInterval(() => {
           const now = Date.now();
-          
+
           // Generate ECG data (approximately 13 samples per interval at 130Hz)
           const newEcgData = generateSimulatedECGData(now, 13, currentHR || 70);
-          
-          setCurrentECG(prev => [...prev, ...newEcgData].slice(-1000)); // Keep last 1000 points
-          setEcgHistory(prev => [...prev, ...newEcgData]);
+
+          setCurrentECG((prev) => [...prev, ...newEcgData].slice(-1000)); // Keep last 1000 points
+          setEcgHistory((prev) => [...prev, ...newEcgData]);
         }, 100); // Update every 100ms
-        
+
         simulationIntervalRef.current = interval;
         return;
       }
-      
+
       // Real device ECG streaming
       if (!pmdControlCharacteristic || !pmdDataCharacteristic) {
         throw new Error("PMD characteristics not available");
@@ -344,7 +352,7 @@ export function useHeartRateSensor(
       clearInterval(simulationIntervalRef.current);
       simulationIntervalRef.current = null;
     }
-    
+
     // Stop real device streaming if active
     if (pmdDataCharacteristic) {
       try {
@@ -353,7 +361,7 @@ export function useHeartRateSensor(
         console.error("Error stopping notifications:", err);
       }
     }
-    
+
     setIsECGStreaming(false);
     setCurrentECG([]);
   }, [pmdDataCharacteristic]);

@@ -147,7 +147,6 @@ export function useECGComparison(
   ]);
 
   // Main comparison effect
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     console.log(
       `Comparison - Baseline ECG length: ${baselineECG.length}, Current ECG length: ${currentECG.length}`

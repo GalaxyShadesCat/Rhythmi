@@ -801,7 +801,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
   const handleNextPhase = () => {
     if (phaseStart) {
       let segmentStart = phaseStart;
-      let segmentEnd = Date.now();
+      const segmentEnd = Date.now();
 
       // If the current phase is "rest", remove the first 10 seconds
       if (currentPhase === "rest") {
