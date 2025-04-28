@@ -127,7 +127,7 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
       ],
     };
   };
-
+  
   const renderMetrics = (metrics: ECGMetrics, title: string) => (
     <div className="bg-gray-50 p-3 rounded-lg mb-3">
       <h4 className="font-medium text-gray-800 mb-2">{title}</h4>
