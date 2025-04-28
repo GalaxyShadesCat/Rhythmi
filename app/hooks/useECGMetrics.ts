@@ -160,11 +160,11 @@ export function useECGMetrics(ecgData: ECGDataPoint[], hrData: HRDataPoint[]) {
     const medHR = Math.round(median(hrSeries));
 
     const hrv = Math.round(getRMSSD(rrIntervals));
-    const totalBeats = rPeaks.length;
-    const duration =
-      ecgData.length > 0
-        ? ecgData[ecgData.length - 1].timestamp - ecgData[0].timestamp
-        : 0;
+    const sessionStart = hrData[0]?.timestamp;
+    const sessionEnd = hrData[hrData.length - 1]?.timestamp;
+    const durationMin = (sessionEnd - sessionStart) / 60000; // ms to minutes
+    const totalBeats = Math.round(avgHR * durationMin);
+    const duration = sessionEnd - sessionStart;
 
     setMetrics({
       avgHeartRate: avgHR,

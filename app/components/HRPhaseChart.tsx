@@ -88,7 +88,7 @@ export default function HRPhaseChart({ record }: HRPhaseChartProps) {
     scales: {
       x: {
         type: "linear",
-        title: { display: true, text: "Time (ms)" },
+        title: { display: true, text: "Time (seconds)" },
         min: minTime,
         max: maxTime,
         ticks: {
