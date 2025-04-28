@@ -15,9 +15,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import { marked } from "marked";
 import { RecordData, User } from "@/types/types";
 
-const getRandom = (min: number, max: number) =>
-  Math.round((Math.random() * (max - min) + min) * 100) / 100;
-
 const metricGuidelines = `
 | Metric | Normal Range | Abnormal Values | Potential Issues |
 |--------|---------------|------------------|------------------|
@@ -29,14 +26,16 @@ const metricGuidelines = `
 type HealthChatbotProps = {
   user: User;
   setOpenChat: (open: boolean) => void;
-  selectedRecord: RecordData | null;
+  chatRecord: RecordData | null;
+  setChatRecord: (record: RecordData | null) => void;
   records: RecordData[];
 };
 
 function HealthChatbot({
   user,
   setOpenChat,
-  selectedRecord,
+  chatRecord,
+  setChatRecord,
   records,
 }: HealthChatbotProps) {
   const [input, setInput] = useState("");
@@ -68,12 +67,12 @@ function HealthChatbot({
   }
   const recordsString = useMemo(() => {
     const latestRecords = records.slice(-5);
-    if (selectedRecord) {
-      return formatRecord(selectedRecord);
+    if (chatRecord) {
+      return formatRecord(chatRecord);
     } else {
       return latestRecords.map(formatRecord).join("\n");
     }
-  }, [records, selectedRecord]);
+  }, [records, chatRecord]);
 
   const age = new Date().getFullYear() - user.birth_year;
   const SYSTEM_PROMPT = useMemo(
@@ -81,7 +80,8 @@ function HealthChatbot({
       role: "system",
       content: `You are a helpful health assistant. The user will ask about their cardiovascular and ECG data. Keep your responses short and simple. Reference the following medical metric guidelines:\n\n${metricGuidelines}\n\nUser Info:\nUsername: ${user.user_name}\nGender: ${user.gender}\nBirth Year: ${user.birth_year}\nAge: ${age}\n\nRecent Records:\n${recordsString}\n\nThese records were collected when a user wore a Polar H10 heart rate sensor where they were at rest, exercise/walk for 5 to 6 minutes and then recovered while monitoring their heart rate recovery. If the durations are too short, the data may not be accurate. The user may ask about their heart rate, heart rate variability, and other metrics. You can also provide general health tips based on the user's data. If the user asks about a specific metric, provide a brief explanation and its normal range. If the user asks about their health, provide general advice based on their data. If the user asks about a specific record, provide details about that record. If the user asks about a specific metric, provide details about that metric.`,
     }),
-    [user.user_name, user.gender, user.birth_year, age, recordsString]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, recordsString]
   );
 
   console.log("System prompt:", SYSTEM_PROMPT.content);
@@ -211,7 +211,13 @@ function HealthChatbot({
               New Chat
             </Button>
             {/* ---- Close Icon ---- */}
-            <IconButton edge="end" onClick={() => setOpenChat(false)}>
+            <IconButton
+              edge="end"
+              onClick={() => {
+                setOpenChat(false);
+                setChatRecord(null);
+              }}
+            >
               <CloseIcon />
             </IconButton>
           </Box>

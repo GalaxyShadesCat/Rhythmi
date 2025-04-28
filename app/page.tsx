@@ -84,7 +84,6 @@ export default function Home() {
     stopECGStream,
     currentHR,
     hrHistory,
-    currentECG,
     ecgHistory,
     error,
     isConnected,
@@ -97,100 +96,6 @@ export default function Home() {
   if (!user) {
     return <Login user={user} saveUser={saveUser} clearUser={clearUser} />;
   }
-
-  // Content based on selected tab
-  const renderContent = () => {
-    switch (navIndex) {
-      // Records tab
-      case 0:
-        return (
-          <Box>
-            <Typography variant="h6" mt={3}></Typography>
-            <FetchHistory
-              user_name={user.user_name}
-              records={records}
-              setRecords={setRecords}
-              chatRecord={chatRecord}
-              setChatRecord={setChatRecord}
-              setOpenChat={setOpenChat}
-            />
-          </Box>
-        );
-      // New Record tab
-      case 1:
-        return (
-          <Box>
-            {/* Simulation mode toggle - enabled for development */}
-            {simulationUI}
-
-            <HeartRateMonitor
-              isConnected={isConnected}
-              isECGStreaming={isECGStreaming}
-              connect={connect}
-              disconnect={disconnect}
-              startECGStream={startECGStream}
-              stopECGStream={stopECGStream}
-              error={error}
-              heartRate={currentHR}
-            />
-
-            {isConnected && (
-              <NewRecord
-                isConnected={isConnected}
-                isECGStreaming={isECGStreaming}
-                ecgHistory={ecgHistory}
-                hrHistory={hrHistory}
-                user={user}
-              />
-            )}
-
-            {/* {isECGStreaming && (
-              <>
-                <ECGChart ecgData={displayEcgData} />
-                <ECGAnalysis
-                  ecgData={currentECG}
-                  currentHR={currentHR}
-                  restHR={restHR}
-                />
-              </>
-            )} */}
-
-            {/* <TestModePanel
-              isTestMode={isTestMode}
-              onToggleTestMode={toggleTestMode}
-            />
-
-            <Box className="max-w-4xl mx-auto mt-6">
-              <UploadButton record={record} />
-            </Box>
-
-            <HeartRateRecovery
-              isConnected={isConnected}
-              hrHistory={hrHistory}
-            />
-
-            <ECGCalibration
-              isECGStreaming={isECGStreaming}
-              ecgData={ecgHistory}
-              heartRateData={hrHistory}
-              onRestECGUpdate={setRestECG}
-              onRestHeartRateUpdate={setRestHR}
-            />
-
-            <ActivitySegmentEditor
-              ecgData={ecgHistory}
-              segments={activitySegments}
-              setSegments={setActivitySegments}
-            /> */}
-          </Box>
-        );
-      // Profile tab
-      case 2:
-        return <Profile />;
-      default:
-        return null;
-    }
-  };
 
   return (
     <Box sx={{ pb: 9 }}>
@@ -277,7 +182,12 @@ export default function Home() {
       {/* Floating Chat Button */}
       <Fab
         color="primary"
-        onClick={() => setOpenChat((prev) => !prev)}
+        onClick={() => {
+          setOpenChat((prev) => {
+            if (prev) setChatRecord(null); // Closing
+            return !prev;
+          });
+        }}
         sx={{
           position: "fixed",
           bottom: 80,
@@ -311,8 +221,9 @@ export default function Home() {
           <HealthChatbot
             user={user}
             setOpenChat={setOpenChat}
-            selectedRecord={chatRecord}
+            chatRecord={chatRecord}
             records={records}
+            setChatRecord={setChatRecord}
           />
         </Box>
       </Slide>
