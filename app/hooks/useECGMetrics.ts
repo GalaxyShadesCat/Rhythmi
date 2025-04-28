@@ -32,67 +32,57 @@ export function useECGMetrics(ecgData: ECGDataPoint[]) {
   });
 
   // R-peak detection
-  const findPeaks = useCallback((data: ECGDataPoint[]): number[] => {
-    if (data.length < 10) return [];
-    const values = data.map((point) => point.value);
+  const findPeaks = useCallback(
+    (data: ECGDataPoint[], minPeriod: number = 250): number[] => {
+      if (data.length < 3) return [];
 
-    const meanVal = mean(values);
-    const stdDev = Math.sqrt(
-      values.reduce((sum, val) => sum + Math.pow(val - meanVal, 2), 0) /
-        values.length
-    );
+      // Calculate mean and std deviation for thresholding
+      const values = data.map((d) => d.value);
+      const mean = values.reduce((a, b) => a + b, 0) / values.length;
+      const std = Math.sqrt(
+        values.map((v) => (v - mean) ** 2).reduce((a, b) => a + b, 0) /
+          values.length
+      );
 
-    const sorted = [...values].sort((a, b) => a - b);
-    const q1 = sorted[Math.floor(sorted.length * 0.25)];
-    const q3 = sorted[Math.floor(sorted.length * 0.75)];
-    const iqr = q3 - q1;
-    const snr = iqr / stdDev;
-    const thresholdFactor = snr < 1.5 ? 2.5 : snr < 2.5 ? 2.0 : 1.5;
-    const adaptiveThreshold = meanVal + thresholdFactor * stdDev;
+      // Set a threshold
+      const threshold = mean + 0.8 * std;
 
-    const peaks: number[] = [];
-    const minRefractoryPeriod = Math.round(0.25 * ECG_DEFAULT_SAMPLE_RATE);
-    let lastPeakIndex = -minRefractoryPeriod;
+      const rPeakTimestamps: number[] = [];
+      let lastPeakTimestamp = -Infinity;
 
-    const potentialPeaks: {
-      index: number;
-      value: number;
-      timestamp: number;
-    }[] = [];
-    for (let i = 2; i < data.length - 2; i++) {
-      const isPeak =
-        data[i].value > data[i - 2].value &&
-        data[i].value > data[i - 1].value &&
-        data[i].value >= data[i + 1].value &&
-        data[i].value >= data[i + 2].value;
-      const isAboveThreshold = data[i].value > adaptiveThreshold;
-      if (isPeak && isAboveThreshold) {
-        potentialPeaks.push({
-          index: i,
-          value: data[i].value,
-          timestamp: data[i].timestamp,
-        });
-      }
-    }
-
-    if (potentialPeaks.length > 0) {
-      potentialPeaks.sort((a, b) => a.index - b.index);
-      peaks.push(potentialPeaks[0].timestamp);
-      lastPeakIndex = potentialPeaks[0].index;
-      for (let i = 1; i < potentialPeaks.length; i++) {
-        const currentPeak = potentialPeaks[i];
-        if (currentPeak.index - lastPeakIndex >= minRefractoryPeriod) {
-          peaks.push(currentPeak.timestamp);
-          lastPeakIndex = currentPeak.index;
-        } else if (currentPeak.value > potentialPeaks[i - 1].value) {
-          peaks.pop();
-          peaks.push(currentPeak.timestamp);
-          lastPeakIndex = currentPeak.index;
+      for (let i = 1; i < data.length - 1; i++) {
+        // Local maxima and above threshold and minPeriod since last peak
+        if (
+          data[i].value > data[i - 1].value &&
+          data[i].value > data[i + 1].value &&
+          data[i].value > threshold &&
+          data[i].timestamp - lastPeakTimestamp >= minPeriod
+        ) {
+          rPeakTimestamps.push(data[i].timestamp);
+          lastPeakTimestamp = data[i].timestamp;
         }
       }
+
+      return rPeakTimestamps;
+    },
+    []
+  );
+
+  const filterArtifacts = (rr: number[]) => {
+    if (rr.length < 3) return rr;
+    const filtered = [];
+    for (let i = 1; i < rr.length - 1; i++) {
+      const prev = rr[i - 1],
+        curr = rr[i],
+        next = rr[i + 1];
+      const isArtifact =
+        Math.abs(curr - prev) > 0.2 * prev &&
+        Math.abs(curr - next) > 0.2 * next;
+      if (!isArtifact) filtered.push(curr);
+      // Optionally: else filtered.push(mean([prev, next])); // Impute
     }
-    return peaks;
-  }, []);
+    return filtered;
+  };
 
   // RR intervals (ms)
   const getRRIntervals = useCallback((rPeaks: number[]): number[] => {
@@ -115,8 +105,9 @@ export function useECGMetrics(ecgData: ECGDataPoint[]) {
 
   // HRV - RMSSD
   const getRMSSD = useCallback((rrIntervals: number[]): number => {
-    if (rrIntervals.length < MIN_RR_INTERVALS) return 0;
-    const recent = rrIntervals.slice(-HRV_WINDOW_SIZE);
+    const filtered = filterArtifacts(rrIntervals);
+    if (filtered.length < MIN_RR_INTERVALS) return 0;
+    const recent = filtered.slice(-HRV_WINDOW_SIZE);
     const successiveDiffs: number[] = [];
     for (let i = 1; i < recent.length; i++) {
       successiveDiffs.push(Math.abs(recent[i] - recent[i - 1]));

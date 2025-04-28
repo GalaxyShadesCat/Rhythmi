@@ -28,7 +28,6 @@ import {
   User,
   ECGMetrics,
 } from "@/types/types";
-import HeartRateRecovery from "@/components/HeartRateRecovery";
 import {
   Chart,
   LineController,
@@ -44,7 +43,6 @@ import { useECGMetrics } from "@/hooks/useECGMetrics";
 import { getDataForSegment } from "../utils/phaseData";
 import { useMongoDB } from "../hooks/useMongoDB";
 import ECGChart from "./ECGChart";
-import { set } from "date-fns";
 import useSignalQuality from "@/hooks/useSignalQuality";
 
 // --- Constants and Helpers ---
@@ -371,33 +369,40 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
                 mb: 1,
               }}
             >
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+              >
                 <Typography variant="subtitle2" fontWeight={600} mb={0.5}>
                   {PHASE_LABELS[seg.type]}
                 </Typography>
                 {seg.signalQuality && (
-                  <Chip 
-                    label={`Signal Quality: ${seg.signalQuality}`} 
+                  <Chip
+                    label={`Signal Quality: ${seg.signalQuality}`}
                     color={
-                      seg.signalQuality === "excellent" ? "success" :
-                      seg.signalQuality === "good" ? "info" :
-                      seg.signalQuality === "fair" ? "warning" : "error"
+                      seg.signalQuality === "excellent"
+                        ? "success"
+                        : seg.signalQuality === "good"
+                        ? "info"
+                        : seg.signalQuality === "fair"
+                        ? "warning"
+                        : "error"
                     }
                     size="small"
                   />
                 )}
               </Box>
-              <Typography variant="body2">
-                Min: <b>{seg.stats.min}</b> bpm, Max: <b>{seg.stats.max}</b>{" "}
-                bpm, Mean: <b>{seg.stats.mean}</b> bpm, Points:{" "}
-                <b>{seg.stats.count}</b>
-              </Typography>
               {seg.metrics && (
                 <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  Median: <b>{seg.metrics.medianHeartRate}</b> bpm, HRV:{" "}
-                  <b>{seg.metrics.heartRateVariability.toFixed(1)}</b> ms, Total
-                  Beats: <b>{seg.metrics.totalBeats}</b>, Duration:{" "}
-                  <b>{Math.round(seg.metrics.duration / 1000)}</b>s
+                  Min HR: <b>{seg.stats.min}</b> bpm, Max HR:{" "}
+                  <b>{seg.stats.max}</b> bpm, Avg HR:{" "}
+                  <b>{seg.metrics.avgHeartRate}</b> bpm, Total Beats:{" "}
+                  <b>{seg.metrics.totalBeats}</b>
+                  <br />
+                  HRV: <b>{seg.metrics.heartRateVariability.toFixed(1)}</b> ms,
+                  Duration: <b>{(seg.metrics.duration / 60000).toFixed(1)}</b>{" "}
+                  min
                 </Typography>
               )}
             </Box>
@@ -456,12 +461,16 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
               Ready to Upload
             </Typography>
             {signalQuality && (
-              <Chip 
-                label={`Signal Quality: ${signalQuality}`} 
+              <Chip
+                label={`Signal Quality: ${signalQuality}`}
                 color={
-                  signalQuality === "excellent" ? "success" :
-                  signalQuality === "good" ? "info" :
-                  signalQuality === "fair" ? "warning" : "error"
+                  signalQuality === "excellent"
+                    ? "success"
+                    : signalQuality === "good"
+                    ? "info"
+                    : signalQuality === "fair"
+                    ? "warning"
+                    : "error"
                 }
                 sx={{ ml: 2 }}
               />
@@ -547,11 +556,18 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
             </Button>
           )}
         </Stack>
-        {phaseStart && !canAdvancePhase && (currentPhase === "rest" || currentPhase === "exercise") && (
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-            Minimum {currentPhase === "rest" ? "3" : "6"} minutes required before advancing
-          </Typography>
-        )}
+        {phaseStart &&
+          !canAdvancePhase &&
+          (currentPhase === "rest" || currentPhase === "exercise") && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", mt: 1 }}
+            >
+              Minimum {currentPhase === "rest" ? "3" : "6"} minutes required
+              before advancing
+            </Typography>
+          )}
       </CardContent>
     </Card>
   );
@@ -720,11 +736,14 @@ const NewRecord: React.FC<NewRecordProps> = ({
         if (seg.type === "rest") metrics = restMetrics;
         if (seg.type === "exercise") metrics = exerciseMetrics;
         if (seg.type === "recovery") metrics = recoveryMetrics;
-        
+
         // Calculate signal quality for this segment
         const segmentData = getDataForSegment(ecgHistory, seg);
-        const signalQuality = segmentData.length > 0 ? calculateSignalQuality(segmentData) : undefined;
-        
+        const signalQuality =
+          segmentData.length > 0
+            ? calculateSignalQuality(segmentData)
+            : undefined;
+
         return {
           ...seg,
           stats: calculateStatsForSegment(hrHistory, seg),
@@ -732,17 +751,25 @@ const NewRecord: React.FC<NewRecordProps> = ({
           signalQuality,
         };
       }),
-    [activitySegments, hrHistory, restMetrics, exerciseMetrics, recoveryMetrics, ecgHistory, calculateSignalQuality]
+    [
+      activitySegments,
+      hrHistory,
+      restMetrics,
+      exerciseMetrics,
+      recoveryMetrics,
+      ecgHistory,
+      calculateSignalQuality,
+    ]
   );
 
   // Determine if enough time has passed to advance to next phase
   const canAdvancePhase = useMemo(() => {
     if (!phaseStart) return false;
-    
+
     if (currentPhase === "rest" || currentPhase === "exercise") {
       return timer >= PHASE_MINIMUM_DURATIONS[currentPhase];
     }
-    
+
     // Recovery phase can always be advanced
     return true;
   }, [currentPhase, phaseStart, timer]);
@@ -773,9 +800,23 @@ const NewRecord: React.FC<NewRecordProps> = ({
   };
   const handleNextPhase = () => {
     if (phaseStart) {
+      let segmentStart = phaseStart;
+      let segmentEnd = Date.now();
+
+      // If the current phase is "rest", remove the first 10 seconds
+      if (currentPhase === "rest") {
+        // Only adjust if the rest phase lasted more than 10 seconds
+        if (segmentEnd - segmentStart > 10000) {
+          segmentStart += 10000;
+        } else {
+          // If less than 10 seconds, skip saving
+          return;
+        }
+      }
+
       setActivitySegments([
         ...activitySegments,
-        { type: currentPhase, start: phaseStart, end: Date.now() },
+        { type: currentPhase, start: segmentStart, end: segmentEnd },
       ]);
     }
     if (currentPhase === "exercise") setExerciseEnd(Date.now());
@@ -795,13 +836,13 @@ const NewRecord: React.FC<NewRecordProps> = ({
   // Calculate signal quality based on all ECG data from the entire session
   const signalQuality = useMemo(() => {
     if (!isSessionDone || activitySegments.length === 0) return undefined;
-    
+
     // Get all ECG data from all segments
     const allECG = activitySegments.reduce((acc, segment) => {
       const segmentData = getDataForSegment(ecgHistory, segment);
       return [...acc, ...segmentData];
     }, [] as ECGDataPoint[]);
-    
+
     // Calculate overall signal quality
     return calculateSignalQuality(allECG);
   }, [isSessionDone, activitySegments, ecgHistory, calculateSignalQuality]);
