@@ -477,7 +477,8 @@ const NewRecord: React.FC<NewRecordProps> = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [isSessionDone, setIsSessionDone] = useState(false);
   const [phaseStartHistory, setPhaseStartHistory] = useState<number[]>([]);
-  const { uploadRecord, loading, error, success } = useMongoDB();
+  const { uploadRecord, loading, error, success, setError, setSuccess } =
+    useMongoDB();
   const [hasUploaded, setHasUploaded] = useState(false);
   const { calculateSignalQuality } = useSignalQuality();
   const [notes, setNotes] = useState("");
@@ -502,9 +503,24 @@ const NewRecord: React.FC<NewRecordProps> = ({
     [ecgHistory, recoverySegment]
   );
 
-  const restMetrics = useECGMetrics(restECG);
-  const exerciseMetrics = useECGMetrics(exerciseECG);
-  const recoveryMetrics = useECGMetrics(recoveryECG);
+  const restHR = useMemo(
+    () => (restSegment ? getDataForSegment(hrHistory, restSegment) : []),
+    [hrHistory, restSegment]
+  );
+  const exerciseHR = useMemo(
+    () =>
+      exerciseSegment ? getDataForSegment(hrHistory, exerciseSegment) : [],
+    [hrHistory, exerciseSegment]
+  );
+  const recoveryHR = useMemo(
+    () =>
+      recoverySegment ? getDataForSegment(hrHistory, recoverySegment) : [],
+    [hrHistory, recoverySegment]
+  );
+
+  const restMetrics = useECGMetrics(restECG, restHR);
+  const exerciseMetrics = useECGMetrics(exerciseECG, exerciseHR);
+  const recoveryMetrics = useECGMetrics(recoveryECG, recoveryHR);
   const hrrPoints = useMemo(
     () => getRecoveryHRR(hrHistory, exerciseSegment, recoverySegment),
     [hrHistory, exerciseSegment, recoverySegment]
@@ -608,6 +624,8 @@ const NewRecord: React.FC<NewRecordProps> = ({
     setHasUploaded(false);
     setRecoveryEnd(null);
     setNotes("");
+    setError(null);
+    setSuccess(false);
   };
 
   const segmentStats = useMemo(

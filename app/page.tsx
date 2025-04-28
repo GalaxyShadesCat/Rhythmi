@@ -207,7 +207,50 @@ export default function Home() {
       </AppBar>
 
       {/* Main Content */}
-      <Box sx={{ px: 2, pt: 1 }}>{renderContent()}</Box>
+      <Box sx={{ px: 2, pt: 1 }}>
+        {/* Records Tab */}
+        <div style={{ display: navIndex === 0 ? "block" : "none" }}>
+          <Typography variant="h6" mt={3}></Typography>
+          <FetchHistory
+            user_name={user.user_name}
+            records={records}
+            setRecords={setRecords}
+            chatRecord={chatRecord}
+            setChatRecord={setChatRecord}
+            setOpenChat={setOpenChat}
+          />
+        </div>
+
+        {/* New Record Tab */}
+        <div style={{ display: navIndex === 1 ? "block" : "none" }}>
+          {/* Simulation mode toggle - enabled for development */}
+          {simulationUI}
+          <HeartRateMonitor
+            isConnected={isConnected}
+            isECGStreaming={isECGStreaming}
+            connect={connect}
+            disconnect={disconnect}
+            startECGStream={startECGStream}
+            stopECGStream={stopECGStream}
+            error={error}
+            heartRate={currentHR}
+          />
+          {isConnected && (
+            <NewRecord
+              isConnected={isConnected}
+              isECGStreaming={isECGStreaming}
+              ecgHistory={ecgHistory}
+              hrHistory={hrHistory}
+              user={user}
+            />
+          )}
+        </div>
+
+        {/* Profile Tab */}
+        <div style={{ display: navIndex === 2 ? "block" : "none" }}>
+          <Profile />
+        </div>
+      </Box>
 
       {/* Bottom Navigation */}
       <Paper

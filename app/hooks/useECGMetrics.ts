@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ECGDataPoint, ECGMetrics } from "@/app/types/types";
+import { ECGDataPoint, ECGMetrics, HRDataPoint } from "@/app/types/types";
 import { ECG_DEFAULT_SAMPLE_RATE } from "@/utils/constants";
 
 // Shared constants
@@ -18,7 +18,7 @@ const median = (arr: number[]) =>
 const mean = (arr: number[]) =>
   arr.length === 0 ? 0 : arr.reduce((sum, v) => sum + v, 0) / arr.length;
 
-export function useECGMetrics(ecgData: ECGDataPoint[]) {
+export function useECGMetrics(ecgData: ECGDataPoint[], hrData: HRDataPoint[]) {
   const [metrics, setMetrics] = useState<ECGMetrics>({
     avgHeartRate: 0,
     medianHeartRate: 0,
@@ -137,12 +137,28 @@ export function useECGMetrics(ecgData: ECGDataPoint[]) {
 
     const rPeaks = findPeaks(ecgData);
     const rrIntervals = getRRIntervals(rPeaks);
-    const hrSeries = getHRFromRR(rrIntervals);
 
+    // Extract only the heart rate values
+    const hrSeries = hrData.map((dp) => dp.value);
+
+    // Utility function for mean (average)
+    const mean = (arr: number[]) =>
+      arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
+
+    // Calculate statistics
     const avgHR = Math.round(mean(hrSeries));
+    const minHR = Math.round(Math.min(...hrSeries));
+    const maxHR = Math.round(Math.max(...hrSeries));
+    const median = (arr: number[]) => {
+      if (!arr.length) return 0;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2
+        ? sorted[mid]
+        : (sorted[mid - 1] + sorted[mid]) / 2;
+    };
     const medHR = Math.round(median(hrSeries));
-    const minHR = Math.round(Math.min(...hrSeries, 0));
-    const maxHR = Math.round(Math.max(...hrSeries, 0));
+
     const hrv = Math.round(getRMSSD(rrIntervals));
     const totalBeats = rPeaks.length;
     const duration =
@@ -161,7 +177,7 @@ export function useECGMetrics(ecgData: ECGDataPoint[]) {
       totalBeats,
       duration,
     });
-  }, [ecgData, findPeaks, getRRIntervals, getHRFromRR, getRMSSD]);
+  }, [ecgData, hrData, findPeaks, getRRIntervals, getHRFromRR, getRMSSD]);
 
   return metrics;
 }
