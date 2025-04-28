@@ -184,7 +184,7 @@ export default function Home() {
         color="primary"
         onClick={() => {
           setOpenChat((prev) => {
-            if (prev) setChatRecord(null); // Closing
+            // if (prev) setChatRecord(null); // Closing
             return !prev;
           });
         }}

@@ -53,7 +53,7 @@ function FetchHistory({
 
   const handleChatAboutRecord = (record: RecordData) => {
     if (chatRecord?._id === record._id) {
-      setChatRecord(null);
+      // setChatRecord(null);
     } else {
       setChatRecord(record);
       setOpenChat(true);

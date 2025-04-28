@@ -65,23 +65,26 @@ function HealthChatbot({
   }
   `;
   }
-  const recordsString = useMemo(() => {
-    const latestRecords = records.slice(-5);
+  const latestRecordsString = useMemo(() => {
+    return records.slice(-5).map(formatRecord).join("\n");
+  }, [records]);
+
+  const selectedRecordString = useMemo(() => {
     if (chatRecord) {
       return formatRecord(chatRecord);
     } else {
-      return latestRecords.map(formatRecord).join("\n");
+      return "No record selected.";
     }
-  }, [records, chatRecord]);
+  }, [chatRecord]);
 
   const age = new Date().getFullYear() - user.birth_year;
   const SYSTEM_PROMPT = useMemo(
     () => ({
       role: "system",
-      content: `You are a helpful health assistant. The user will ask about their cardiovascular and ECG data. Keep your responses short and simple. Reference the following medical metric guidelines:\n\n${metricGuidelines}\n\nUser Info:\nUsername: ${user.user_name}\nGender: ${user.gender}\nBirth Year: ${user.birth_year}\nAge: ${age}\n\nRecent Records:\n${recordsString}\n\nThese records were collected when a user wore a Polar H10 heart rate sensor where they were at rest, exercise/walk for 5 to 6 minutes and then recovered while monitoring their heart rate recovery. If the durations are too short, the data may not be accurate. The user may ask about their heart rate, heart rate variability, and other metrics. You can also provide general health tips based on the user's data. If the user asks about a specific metric, provide a brief explanation and its normal range. If the user asks about their health, provide general advice based on their data. If the user asks about a specific record, provide details about that record. If the user asks about a specific metric, provide details about that metric.`,
+      content: `You are a helpful health assistant. The user will ask about their cardiovascular and ECG data. Keep your responses short and simple. Reference the following medical metric guidelines:\n\n${metricGuidelines}\n\nUser Info:\nUsername: ${user.user_name}\nGender: ${user.gender}\nBirth Year: ${user.birth_year}\nAge: ${age}\n\nRecent Records:\n${latestRecordsString}\n\nSelected Record for Discussion:\n${selectedRecordString}\n\nThese records were collected when a user wore a Polar H10 heart rate sensor where they were at rest, exercise/walk for 5 to 6 minutes and then recovered while monitoring their heart rate recovery. If the durations are too short, the data may not be accurate. The user may ask about their heart rate, heart rate variability, and other metrics. You can also provide general health tips based on the user's data. If the user asks about a specific metric, provide a brief explanation and its normal range. If the user asks about their health, provide general advice based on their data. If the user asks about a specific record, provide details about that record. If the user asks about a specific metric, provide details about that metric.`,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, recordsString]
+    [user, latestRecordsString, selectedRecordString]
   );
 
   console.log("System prompt:", SYSTEM_PROMPT.content);
@@ -215,7 +218,7 @@ function HealthChatbot({
               edge="end"
               onClick={() => {
                 setOpenChat(false);
-                setChatRecord(null);
+                // setChatRecord(null);
               }}
             >
               <CloseIcon />
