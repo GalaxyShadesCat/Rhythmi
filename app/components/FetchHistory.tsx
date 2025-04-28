@@ -134,19 +134,27 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div>
           <span className="text-gray-500">Avg HR:</span>{" "}
-          <span className="font-medium">{Math.round(metrics.avgHeartRate)} bpm</span>
+          <span className="font-medium">
+            {Math.round(metrics.avgHeartRate)} bpm
+          </span>
         </div>
         <div>
           <span className="text-gray-500">Min HR:</span>{" "}
-          <span className="font-medium">{Math.round(metrics.minHeartRate)} bpm</span>
+          <span className="font-medium">
+            {Math.round(metrics.minHeartRate)} bpm
+          </span>
         </div>
         <div>
           <span className="text-gray-500">Max HR:</span>{" "}
-          <span className="font-medium">{Math.round(metrics.maxHeartRate)} bpm</span>
+          <span className="font-medium">
+            {Math.round(metrics.maxHeartRate)} bpm
+          </span>
         </div>
         <div>
           <span className="text-gray-500">HRV:</span>{" "}
-          <span className="font-medium">{Math.round(metrics.heartRateVariability)} ms</span>
+          <span className="font-medium">
+            {Math.round(metrics.heartRateVariability)} ms
+          </span>
         </div>
         <div>
           <span className="text-gray-500">Total Beats:</span>{" "}
@@ -154,7 +162,9 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
         </div>
         <div>
           <span className="text-gray-500">Duration:</span>{" "}
-          <span className="font-medium">{Math.round(metrics.duration / 1000)} s</span>
+          <span className="font-medium">
+            {Math.round(metrics.duration / 1000)} s
+          </span>
         </div>
       </div>
     </div>
@@ -260,7 +270,7 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
 
           <div className="space-y-4">
             {records.map((record) => (
-              <div key={record._id} className="p-4 border rounded shadow-sm">
+              <div key={record._id} className="p-2 border rounded shadow-sm">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-semibold">
@@ -278,18 +288,18 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
                       })}
                     </p>
                     {record.notes && (
-                      <div className="mt-3 p-3 bg-gray-50 rounded">
+                      <div className="mt-3 py-2 rounded">
                         <p className="font-medium">Notes: {record.notes}</p>
                       </div>
                     )}
-                    </div>
+                  </div>
                   <button
                     onClick={() =>
                       setSelectedRecord(
                         selectedRecord?._id === record._id ? null : record
                       )
                     }
-                    className="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm"
+                    className="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm whitespace-nowrap"
                   >
                     {selectedRecord?._id === record._id
                       ? "Hide Details"
@@ -301,8 +311,14 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
                   <div className="mt-4 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {renderMetrics(record.rest_metrics, "Rest Metrics")}
-                      {renderMetrics(record.exercise_metrics, "Exercise Metrics")}
-                      {renderMetrics(record.recovery_metrics, "Recovery Metrics")}
+                      {renderMetrics(
+                        record.exercise_metrics,
+                        "Exercise Metrics"
+                      )}
+                      {renderMetrics(
+                        record.recovery_metrics,
+                        "Recovery Metrics"
+                      )}
                     </div>
 
                     {record.hrr_points && record.hrr_points.length > 0 && (
@@ -320,7 +336,9 @@ function FetchHistory({ user_name, records, setRecords }: FetchHistoryProps) {
                     )}
 
                     <div className="mt-4">
-                      <h4 className="font-medium text-gray-800 mb-2">ECG Signal</h4>
+                      <h4 className="font-medium text-gray-800 mb-2">
+                        ECG Signal
+                      </h4>
                       <div className="h-64 w-full">
                         <Line
                           options={chartOptions}

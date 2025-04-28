@@ -16,6 +16,7 @@ export interface RecordData {
   recovery_metrics: ECGMetrics;
   activity_segments: ActivitySegment[];
   hrr_points?: HRRPoint[];
+  notes?: string;
 }
 
 export interface ECGDataPoint {

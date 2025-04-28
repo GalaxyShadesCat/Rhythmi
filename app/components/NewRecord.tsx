@@ -203,16 +203,21 @@ const HRPhasesChart: React.FC<HRPhasesChartProps> = ({
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
 
+  // Get first and last activity times
+  const firstActivityStart =
+    activitySegments.length > 0 ? activitySegments[0].start : null;
+  const lastActivityEnd =
+    activitySegments.length > 0
+      ? activitySegments[activitySegments.length - 1].end
+      : null;
+
+  // Filter HR data based on activity segment times
   const filteredHR = useMemo(() => {
-    if (!firstPhaseStart) return [];
-    if (recoveryEnd) {
-      return hrHistory.filter(
-        (p) =>
-          p.timestamp >= firstPhaseStart && p.timestamp <= recoveryEnd + 1000
-      );
-    }
-    return hrHistory.filter((p) => p.timestamp >= firstPhaseStart);
-  }, [hrHistory, firstPhaseStart, recoveryEnd]);
+    if (firstActivityStart === null || lastActivityEnd === null) return [];
+    return hrHistory.filter(
+      (p) => p.timestamp >= firstActivityStart && p.timestamp <= lastActivityEnd
+    );
+  }, [hrHistory, firstActivityStart, lastActivityEnd]);
 
   // Dynamically add recovery segment if in recovery phase (not yet ended)
   const allRegions = useMemo(() => {
@@ -349,7 +354,7 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
       <Typography variant="h6" mb={2}>
         Session Summary
       </Typography>
-      <Box display="flex" gap={4} mb={2}>
+      <Box display="flex" gap={4} mb={2} flexWrap="wrap">
         <Typography variant="subtitle1">
           <b>Base HR:</b> {baseHR} bpm
         </Typography>
@@ -357,16 +362,15 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
           <b>Peak HR:</b> {peakHR} bpm
         </Typography>
       </Box>
-      <Stack spacing={1}>
+      <Stack spacing={2}>
         {segmentStats.map((seg, i) =>
-          seg.stats ? (
+          seg.metrics ? (
             <Box
               key={i}
               sx={{
-                p: 2,
+                bgcolor: PHASE_COLORS[seg.type] + "55",
                 borderRadius: 2,
-                bgcolor: PHASE_COLORS[seg.type] + "22",
-                color: "#2d3748",
+                p: 2,
                 mb: 1,
               }}
             >
@@ -374,9 +378,10 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
+                mb={1}
               >
-                <Typography variant="subtitle2" fontWeight={600} mb={0.5}>
-                  {PHASE_LABELS[seg.type]}
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {PHASE_LABELS[seg.type] || seg.type}
                 </Typography>
                 {seg.signalQuality && (
                   <Chip
@@ -394,22 +399,51 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
                   />
                 )}
               </Box>
-              {seg.metrics && (
-                <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  Min HR: <b>{seg.stats.min}</b> bpm, Max HR:{" "}
-                  <b>{seg.stats.max}</b> bpm, Avg HR:{" "}
-                  <b>{seg.metrics.avgHeartRate}</b> bpm, Total Beats:{" "}
-                  <b>{seg.metrics.totalBeats}</b>
-                  <br />
-                  HRV: <b>{seg.metrics.heartRateVariability.toFixed(1)}</b> ms,
-                  Duration: <b>{(seg.metrics.duration / 60000).toFixed(1)}</b>{" "}
-                  min
-                </Typography>
-              )}
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-500">Avg HR:</span>{" "}
+                  <span className="font-medium">
+                    {Math.round(seg.metrics.avgHeartRate)} bpm
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Min HR:</span>{" "}
+                  <span className="font-medium">
+                    {Math.round(seg.metrics.minHeartRate)} bpm
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Max HR:</span>{" "}
+                  <span className="font-medium">
+                    {Math.round(seg.metrics.maxHeartRate)} bpm
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">HRV:</span>{" "}
+                  <span className="font-medium">
+                    {Math.round(seg.metrics.heartRateVariability)} ms
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Total Beats:</span>{" "}
+                  <span className="font-medium">{seg.metrics.totalBeats}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Duration:</span>{" "}
+                  <span className="font-medium">
+                    {Math.round(seg.metrics.duration / 1000)} s
+                  </span>
+                </div>
+              </div>
             </Box>
           ) : (
-            <Typography key={i} variant="body2">
-              No data for {PHASE_LABELS[seg.type]}
+            <Typography
+              key={i}
+              variant="body2"
+              color="textSecondary"
+              sx={{ mb: 1 }}
+            >
+              No data for {PHASE_LABELS[seg.type] || seg.type}
             </Typography>
           )
         )}
@@ -461,7 +495,7 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
             <Typography variant="h6" ml={1}>
               Ready to Upload
             </Typography>
-            {signalQuality && (
+            {/* {signalQuality && (
               <Chip
                 label={`Signal Quality: ${signalQuality}`}
                 color={
@@ -475,7 +509,7 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
                 }
                 sx={{ ml: 2 }}
               />
-            )}
+            )} */}
           </Box>
           <Typography variant="body2" color="text.secondary" mb={2}>
             Upload your data to MongoDB.
@@ -565,8 +599,8 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
               color="text.secondary"
               sx={{ display: "block", mt: 1 }}
             >
-              Minimum {currentPhase === "rest" ? "3" : "6"} minutes required
-              before advancing
+              {/* Minimum {currentPhase === "rest" ? "3" : "6"} minutes required
+              before advancing */}
             </Typography>
           )}
       </CardContent>
@@ -668,7 +702,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
       activitySegments.length === 0
     )
       return null;
-  
+
     const overallStart =
       activitySegments.length > 0
         ? Math.min(...activitySegments.map((seg) => seg.start))
@@ -683,7 +717,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
             (d) => d.timestamp >= overallStart && d.timestamp <= overallEnd
           )
         : [];
-  
+
     const relevantHR =
       overallStart !== null && overallEnd !== null
         ? hrHistory.filter(
@@ -711,7 +745,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     exerciseMetrics,
     recoveryMetrics,
     hrrPoints,
-    notes, 
+    notes,
   ]);
 
   const handleUpload = () => {
