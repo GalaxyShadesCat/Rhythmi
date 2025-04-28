@@ -57,48 +57,53 @@ const RecordSchema = new mongoose.Schema({
     value: { type: Number, required: true }
   }],
   rest_metrics: {
-    avgHeartRate: Number,
-    medianHeartRate: Number,
-    minHeartRate: Number,
-    maxHeartRate: Number,
-    heartRateVariability: Number,
-    rrIntervals: [Number],
-    rPeaks: [Number],
-    totalBeats: Number,
-    duration: Number
+    avgHeartRate: { type: Number, required: true },
+    medianHeartRate: { type: Number, required: true },
+    minHeartRate: { type: Number, required: true },
+    maxHeartRate: { type: Number, required: true },
+    heartRateVariability: { type: Number, required: true },
+    rrIntervals: { type: [Number], required: true },
+    rPeaks: { type: [Number], required: true },
+    totalBeats: { type: Number, required: true },
+    duration: { type: Number, required: true }
   },
   exercise_metrics: {
-    avgHeartRate: Number,
-    medianHeartRate: Number,
-    minHeartRate: Number,
-    maxHeartRate: Number,
-    heartRateVariability: Number,
-    rrIntervals: [Number],
-    rPeaks: [Number],
-    totalBeats: Number,
-    duration: Number
+    avgHeartRate: { type: Number, required: true },
+    medianHeartRate: { type: Number, required: true },
+    minHeartRate: { type: Number, required: true },
+    maxHeartRate: { type: Number, required: true },
+    heartRateVariability: { type: Number, required: true },
+    rrIntervals: { type: [Number], required: true },
+    rPeaks: { type: [Number], required: true },
+    totalBeats: { type: Number, required: true },
+    duration: { type: Number, required: true }
   },
   recovery_metrics: {
-    avgHeartRate: Number,
-    medianHeartRate: Number,
-    minHeartRate: Number,
-    maxHeartRate: Number,
-    heartRateVariability: Number,
-    rrIntervals: [Number],
-    rPeaks: [Number],
-    totalBeats: Number,
-    duration: Number
+    avgHeartRate: { type: Number, required: true },
+    medianHeartRate: { type: Number, required: true },
+    minHeartRate: { type: Number, required: true },
+    maxHeartRate: { type: Number, required: true },
+    heartRateVariability: { type: Number, required: true },
+    rrIntervals: { type: [Number], required: true },
+    rPeaks: { type: [Number], required: true },
+    totalBeats: { type: Number, required: true },
+    duration: { type: Number, required: true }
   },
   activity_segments: [{
-    type: { type: String, enum: ["rest", "exercise", "recovery"], required: true },
+    type: { 
+      type: String, 
+      enum: ["rest", "exercise", "recovery"], 
+      required: true 
+    },
     start: { type: Number, required: true },
     end: { type: Number, required: true }
   }],
   hrr_points: [{
-    time: Number,
-    hr: Number,
-    hrr: Number
-  }]
+    time: { type: Number, required: true },
+    hr: { type: Number, required: false }, // Optional since it can be null
+    hrr: { type: Number, required: false } // Optional since it can be null
+  }],
+  notes: { type: String, required: false } // New optional field
 }, {
   timestamps: false, // Don't add createdAt and updatedAt fields
   versionKey: false  // Don't add __v version key field
