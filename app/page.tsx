@@ -9,15 +9,12 @@ import {
   Box,
   Paper,
   Typography,
-  Fab,
-  Slide,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import LogoutIcon from "@mui/icons-material/Logout";
 import UploadIcon from "@mui/icons-material/Upload";
 import ArticleIcon from "@mui/icons-material/Article";
 import PersonIcon from "@mui/icons-material/Person";
-import ChatIcon from "@mui/icons-material/Chat";
 
 import { useHeartRateSensor } from "@/hooks/useHeartRateSensor";
 import HeartRateMonitor from "@/components/HeartRateMonitor";
@@ -28,10 +25,6 @@ import FetchHistory from "@/components/FetchHistory";
 import Profile from "@/components/Profile";
 import NewRecord from "@/app/components/NewRecord";
 import { RecordData } from "@/types/types";
-
-// App theme colors
-const PRIMARY_BLUE = "#0080FF";
-const HOVER_BLUE = "#0070e0";
 
 export default function Home() {
   const { user, saveUser, clearUser } = useLocalStorage();
@@ -88,8 +81,6 @@ export default function Home() {
     error,
     isConnected,
     isECGStreaming,
-    isSimulated,
-    setSimulationMode: toggleSimulation,
   } = useHeartRateSensor(simulationMode);
 
   // Show login if not logged in
@@ -120,7 +111,6 @@ export default function Home() {
             user_name={user.user_name}
             records={records}
             setRecords={setRecords}
-            chatRecord={chatRecord}
             setChatRecord={setChatRecord}
             setOpenChat={setOpenChat}
           />
@@ -179,54 +169,14 @@ export default function Home() {
         </BottomNavigation>
       </Paper>
 
-      {/* Floating Chat Button */}
-      <Fab
-        color="primary"
-        onClick={() => {
-          setOpenChat((prev) => {
-            // if (prev) setChatRecord(null); // Closing
-            return !prev;
-          });
-        }}
-        sx={{
-          position: "fixed",
-          bottom: 80,
-          right: 16,
-          bgcolor: PRIMARY_BLUE,
-          "&:hover": { bgcolor: HOVER_BLUE },
-        }}
-      >
-        <ChatIcon />
-      </Fab>
-
-      <Slide direction="up" in={openChat} mountOnEnter>
-        <Box
-          sx={{
-            position: "fixed",
-            zIndex: 1300,
-            bgcolor: "#fff",
-            display: "flex",
-            flexDirection: "column",
-            boxShadow: 6,
-            borderRadius: { xs: 0, sm: 2 },
-            overflow: "hidden",
-            top: { xs: 0, sm: "auto" },
-            left: { xs: 0, sm: "auto" },
-            right: { xs: 0, sm: 24 },
-            bottom: { xs: 0, sm: 150 },
-            width: { xs: "100%", sm: 400 },
-            height: { xs: "100%", sm: 550 },
-          }}
-        >
-          <HealthChatbot
-            user={user}
-            setOpenChat={setOpenChat}
-            chatRecord={chatRecord}
-            records={records}
-            setChatRecord={setChatRecord}
-          />
-        </Box>
-      </Slide>
+      {/* Floating Action Button for Chatbot */}
+      <HealthChatbot
+        user={user}
+        openChat={openChat}
+        setOpenChat={setOpenChat}
+        chatRecord={chatRecord}
+        records={records}
+      />
     </Box>
   );
 }

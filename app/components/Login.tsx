@@ -82,7 +82,7 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
   };
 
   if (!isMounted) {
-    return null; // Return nothing during SSR
+    return null;
   }
 
   if (user) {

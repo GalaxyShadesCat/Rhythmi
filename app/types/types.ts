@@ -30,7 +30,7 @@ export interface HRDataPoint {
 }
 
 export interface HRRPoint {
-  time: number; // seconds since recovery start
+  time: number; // Seconds since recovery start
   hr: number | null;
   hrr: number | null;
 }

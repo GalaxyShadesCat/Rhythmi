@@ -26,11 +26,11 @@ ChartJS.register(
   annotationPlugin
 );
 
-type HRPhaseChartProps = {
+type HRPhasesChartProps = {
   record: RecordData;
 };
 
-export default function HRPhaseChart({ record }: HRPhaseChartProps) {
+export default function HRPhasesChart({ record }: HRPhasesChartProps) {
   // Build arrays for chart
   const hrData = record.hr;
 
@@ -44,7 +44,7 @@ export default function HRPhaseChart({ record }: HRPhaseChartProps) {
 
   // Build segment boundaries for background color regions
   // We'll use the annotation plugin to add background boxes
-  const backgroundAnnotations = record.activity_segments.map((seg, i) => ({
+  const backgroundAnnotations = record.activity_segments.map((seg) => ({
     type: "box",
     xMin: seg.start,
     xMax: seg.end,

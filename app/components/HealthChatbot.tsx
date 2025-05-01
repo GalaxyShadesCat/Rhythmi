@@ -10,10 +10,14 @@ import {
   AppBar,
   Toolbar,
   IconButton,
+  Slide,
+  Fab,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import ChatIcon from "@mui/icons-material/Chat";
 import { marked } from "marked";
 import { RecordData, User } from "@/types/types";
+import { HOVER_BLUE, PRIMARY_BLUE } from "@/utils/constants";
 
 const metricGuidelines = `
 | Metric | Normal Range | Abnormal Values | Potential Issues |
@@ -23,19 +27,21 @@ const metricGuidelines = `
 | Heart Rate Recovery | >18 bpm | <12 bpm | Poor fitness |
 `;
 
+const CHAT_MESSAGES_KEY = "chat_messages";
+
 type HealthChatbotProps = {
   user: User;
-  setOpenChat: (open: boolean) => void;
+  openChat: boolean;
+  setOpenChat: React.Dispatch<React.SetStateAction<boolean>>;
   chatRecord: RecordData | null;
-  setChatRecord: (record: RecordData | null) => void;
   records: RecordData[];
 };
 
 function HealthChatbot({
   user,
+  openChat,
   setOpenChat,
   chatRecord,
-  setChatRecord,
   records,
 }: HealthChatbotProps) {
   const [input, setInput] = useState("");
@@ -65,7 +71,8 @@ function HealthChatbot({
   }
   `;
   }
-  const latestRecordsString = useMemo(() => {
+
+  const recentRecordsString = useMemo(() => {
     return records.slice(-5).map(formatRecord).join("\n");
   }, [records]);
 
@@ -81,17 +88,17 @@ function HealthChatbot({
   const SYSTEM_PROMPT = useMemo(
     () => ({
       role: "system",
-      content: `You are a helpful health assistant. The user will ask about their cardiovascular and ECG data. Keep your responses short, simple and easy to understand. Reference the following medical metric guidelines:\n\n${metricGuidelines}\n\nUser Info:\nUsername: ${user.user_name}\nGender: ${user.gender}\nBirth Year: ${user.birth_year}\nAge: ${age}\n\nRecent Records:\n${latestRecordsString}\n\nSelected Record for Discussion (but user may be asking about recent records):\n${selectedRecordString}\n\nThese records were collected when a user wore a Polar H10 heart rate sensor where they were at rest, exercise/walk for 5 to 6 minutes and then recovered while monitoring their heart rate recovery. If the durations are too short, the data may not be accurate. The user may ask about their heart rate, heart rate variability, and other metrics. You can also provide general health tips based on the user's data. If the user asks about a specific metric, provide a brief explanation and its normal range. If the user asks about their health, provide general advice based on their data. If the user asks about a specific record, provide details about that record. If the user asks about a specific metric, provide details about that metric.`,
+      content: `You are a helpful health assistant. The user will ask about their cardiovascular and ECG data. Keep your responses short, simple and easy to understand. Reference the following medical metric guidelines:\n\n${metricGuidelines}\n\nUser Info:\nUsername: ${user.user_name}\nGender: ${user.gender}\nBirth Year: ${user.birth_year}\nAge: ${age}\n\nRecent Records:\n${recentRecordsString}\n\nSelected Record for Discussion (but user may be asking about recent records):\n${selectedRecordString}\n\nThese records were collected when a user wore a Polar H10 heart rate sensor where they were at rest, exercise/walk for 5 to 6 minutes and then recovered while monitoring their heart rate recovery. If the durations are too short, the data may not be accurate. The user may ask about their heart rate, heart rate variability, and other metrics. You can also provide general health tips based on the user's data. If the user asks about a specific metric, provide a brief explanation and its normal range. If the user asks about their health, provide general advice based on their data. If the user asks about a specific record, provide details about that record. If the user asks about a specific metric, provide details about that metric.`,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, latestRecordsString, selectedRecordString]
+    [user, recentRecordsString, selectedRecordString]
   );
 
   console.log("System prompt:", SYSTEM_PROMPT.content);
 
   // Load messages on mount
   useEffect(() => {
-    const cached = localStorage.getItem("chat_messages");
+    const cached = localStorage.getItem(CHAT_MESSAGES_KEY);
     const parsed = cached ? JSON.parse(cached) : [];
     setMessages(parsed);
     console.log("Loaded messages from localStorage:", parsed);
@@ -100,7 +107,7 @@ function HealthChatbot({
   // Save messages on update
   useEffect(() => {
     if (messages.length === 0) return; // Don't save if no messages
-    localStorage.setItem("chat_messages", JSON.stringify(messages));
+    localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(messages));
   }, [messages]);
 
   // Scroll to bottom when messages change
@@ -168,165 +175,208 @@ function HealthChatbot({
 
   const handleClearChat = () => {
     setMessages([]);
-    localStorage.removeItem("chat_messages");
+    localStorage.removeItem(CHAT_MESSAGES_KEY);
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-      }}
-    >
-      {/* AppBar at top */}
-      <AppBar
-        position="static"
+    <>
+      {/* Floating Chat Button */}
+      <Fab
+        color="primary"
+        onClick={() => {
+          setOpenChat((prev) => {
+            return !prev;
+          });
+        }}
         sx={{
-          bgcolor: "#fff",
-          color: "#000",
-          boxShadow: 1,
-          zIndex: 10,
+          position: "fixed",
+          bottom: 80,
+          right: 16,
+          bgcolor: PRIMARY_BLUE,
+          "&:hover": { bgcolor: HOVER_BLUE },
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between" }}>
-          <Typography variant="h6">🩺 Health Chatbot</Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            {/* ---- Clear Chat Button ---- */}
-            <Button
-              variant="outlined"
-              color="secondary"
-              size="small"
-              onClick={handleClearChat}
-              sx={{
-                borderColor: "#bbb",
-                color: "#333",
-                textTransform: "none",
-                px: 1.5,
-                py: 0.5,
-                fontSize: "0.85rem",
-                "&:hover": {
-                  bgcolor: "#f5f5f5",
-                  borderColor: "#888",
-                },
-              }}
-            >
-              New Chat
-            </Button>
-            {/* ---- Close Icon ---- */}
-            <IconButton
-              edge="end"
-              onClick={() => {
-                setOpenChat(false);
-                // setChatRecord(null);
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </AppBar>
+        <ChatIcon />
+      </Fab>
 
-      {/* Chat messages list (scrollable) */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          overflowY: "auto",
-          p: 2,
-          bgcolor: "#fff",
-        }}
-      >
-        <Paper
-          elevation={0}
+      <Slide direction="up" in={openChat} mountOnEnter>
+        <Box
           sx={{
+            position: "fixed",
+            zIndex: 1300,
+            bgcolor: "#fff",
             display: "flex",
             flexDirection: "column",
-            gap: 1,
-            p: 2,
-            bgcolor: "#fff",
-            borderRadius: 2,
-            minHeight: "100%",
+            boxShadow: 6,
+            borderRadius: { xs: 0, sm: 2 },
+            overflow: "hidden",
+            top: { xs: 0, sm: "auto" },
+            left: { xs: 0, sm: "auto" },
+            right: { xs: 0, sm: 24 },
+            bottom: { xs: 0, sm: 150 },
+            width: { xs: "100%", sm: 400 },
+            height: { xs: "100%", sm: 550 },
           }}
         >
-          {messages
-            .filter((msg) => msg.role !== "system")
-            .map((msg, i) => (
-              <Box
-                key={i}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+            }}
+          >
+            {/* AppBar at top */}
+            <AppBar
+              position="static"
+              sx={{
+                bgcolor: "#fff",
+                color: "#000",
+                boxShadow: 1,
+                zIndex: 10,
+              }}
+            >
+              <Toolbar sx={{ justifyContent: "space-between" }}>
+                <Typography variant="h6">🩺 Health Chatbot</Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  {/* ---- Clear Chat Button ---- */}
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    size="small"
+                    onClick={handleClearChat}
+                    sx={{
+                      borderColor: "#bbb",
+                      color: "#333",
+                      textTransform: "none",
+                      px: 1.5,
+                      py: 0.5,
+                      fontSize: "0.85rem",
+                      "&:hover": {
+                        bgcolor: "#f5f5f5",
+                        borderColor: "#888",
+                      },
+                    }}
+                  >
+                    New Chat
+                  </Button>
+                  {/* ---- Close Icon ---- */}
+                  <IconButton
+                    edge="end"
+                    onClick={() => {
+                      setOpenChat(false);
+                    }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+              </Toolbar>
+            </AppBar>
+
+            {/* Chat messages list (scrollable) */}
+            <Box
+              sx={{
+                flexGrow: 1,
+                overflowY: "auto",
+                p: 2,
+                bgcolor: "#fff",
+              }}
+            >
+              <Paper
+                elevation={0}
                 sx={{
                   display: "flex",
-                  justifyContent:
-                    msg.role === "user" ? "flex-end" : "flex-start",
+                  flexDirection: "column",
+                  gap: 1,
+                  p: 2,
+                  bgcolor: "#fff",
+                  borderRadius: 2,
+                  minHeight: "100%",
                 }}
               >
-                <Box
-                  sx={{
-                    px: 2,
-                    py: 1,
-                    maxWidth: "90%",
-                    bgcolor: msg.role === "user" ? "#f5f5f5" : "#f0ebff",
-                    color: "#333",
-                    borderRadius: 2,
-                    fontSize: "0.9rem",
-                    wordBreak: "break-word",
-                  }}
-                  dangerouslySetInnerHTML={{ __html: marked(msg.content) }}
-                />
-              </Box>
-            ))}
-          {loading && (
-            <Typography
-              variant="body2"
-              sx={{ color: "#999", fontStyle: "italic", mt: 1 }}
-            >
-              <CircularProgress size={14} sx={{ mr: 1 }} /> Typing...
-            </Typography>
-          )}
-          <div ref={messagesEndRef} />
-        </Paper>
-      </Box>
+                {messages
+                  .filter((msg) => msg.role !== "system")
+                  .map((msg, i) => (
+                    <Box
+                      key={i}
+                      sx={{
+                        display: "flex",
+                        justifyContent:
+                          msg.role === "user" ? "flex-end" : "flex-start",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          px: 2,
+                          py: 1,
+                          maxWidth: "90%",
+                          bgcolor: msg.role === "user" ? "#f5f5f5" : "#f0ebff",
+                          color: "#333",
+                          borderRadius: 2,
+                          fontSize: "0.9rem",
+                          wordBreak: "break-word",
+                        }}
+                        dangerouslySetInnerHTML={{
+                          __html: marked(msg.content),
+                        }}
+                      />
+                    </Box>
+                  ))}
+                {loading && (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#999", fontStyle: "italic", mt: 1 }}
+                  >
+                    <CircularProgress size={14} sx={{ mr: 1 }} /> Typing...
+                  </Typography>
+                )}
+                <div ref={messagesEndRef} />
+              </Paper>
+            </Box>
 
-      {/* Input area at bottom */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 1,
-          p: 2,
-          borderTop: "1px solid #ddd",
-          bgcolor: "#fff",
-        }}
-      >
-        <TextField
-          variant="outlined"
-          placeholder="Ask about your heart..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          fullWidth
-          size="small"
-          sx={{
-            bgcolor: "#fff",
-            borderRadius: 2,
-            "& input": { fontSize: "0.9rem" },
-          }}
-        />
-        <Button
-          variant="contained"
-          onClick={sendMessage}
-          disabled={loading}
-          sx={{
-            bgcolor: "#000",
-            color: "#fff",
-            textTransform: "none",
-            borderRadius: 2,
-            px: 2,
-            "&:hover": { bgcolor: "#000" },
-          }}
-        >
-          Send
-        </Button>
-      </Box>
-    </Box>
+            {/* Input area at bottom */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                p: 2,
+                borderTop: "1px solid #ddd",
+                bgcolor: "#fff",
+              }}
+            >
+              <TextField
+                variant="outlined"
+                placeholder="Ask about your heart..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                fullWidth
+                size="small"
+                sx={{
+                  bgcolor: "#fff",
+                  borderRadius: 2,
+                  "& input": { fontSize: "0.9rem" },
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={sendMessage}
+                disabled={loading}
+                sx={{
+                  bgcolor: "#000",
+                  color: "#fff",
+                  textTransform: "none",
+                  borderRadius: 2,
+                  px: 2,
+                  "&:hover": { bgcolor: "#000" },
+                }}
+              >
+                Send
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Slide>
+    </>
   );
 }
 

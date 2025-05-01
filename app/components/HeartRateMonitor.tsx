@@ -11,7 +11,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-interface MonitorControlsProps {
+interface HeartRateMonitorProps {
   isConnected: boolean;
   isECGStreaming: boolean;
   connect: () => Promise<void>;
@@ -22,19 +22,19 @@ interface MonitorControlsProps {
   heartRate: number | null;
 }
 
-const HeartRateMonitor: React.FC<MonitorControlsProps> = ({
+const HeartRateMonitor: React.FC<HeartRateMonitorProps> = ({
   isConnected,
   isECGStreaming,
   connect,
   disconnect,
   startECGStream,
-  stopECGStream,
+  // stopECGStream,
   error,
   heartRate,
 }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isStartingStream, setIsStartingStream] = useState(false);
-  
+
   // Safe connect function with error handling
   const handleConnect = async () => {
     try {
@@ -46,7 +46,7 @@ const HeartRateMonitor: React.FC<MonitorControlsProps> = ({
       setIsConnecting(false);
     }
   };
-  
+
   // Safe start ECG function with error handling
   const handleStartECG = async () => {
     try {
@@ -76,7 +76,12 @@ const HeartRateMonitor: React.FC<MonitorControlsProps> = ({
   // Not connected: Show Connect button
   if (!isConnected) {
     return (
-      <Box display="flex" flexDirection="column" alignItems="center" width="100%">
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        width="100%"
+      >
         <Button
           onClick={handleConnect}
           variant="contained"
@@ -111,7 +116,11 @@ const HeartRateMonitor: React.FC<MonitorControlsProps> = ({
           )}
         </Button>
         {error && (
-          <Alert severity="error" variant="outlined" sx={{ mb: 2, width: "100%", maxWidth: 400 }}>
+          <Alert
+            severity="error"
+            variant="outlined"
+            sx={{ mb: 2, width: "100%", maxWidth: 400 }}
+          >
             <Typography fontWeight="bold">Connection Error</Typography>
             <Typography variant="body2">{error}</Typography>
           </Alert>
@@ -144,7 +153,11 @@ const HeartRateMonitor: React.FC<MonitorControlsProps> = ({
                 Heart Rate:
               </Typography>
               <Typography variant="h4" color="primary" fontWeight="bold">
-                {heartRate ? `${heartRate} BPM` : isStartingStream ? "Starting..." : "Waiting..."}
+                {heartRate
+                  ? `${heartRate} BPM`
+                  : isStartingStream
+                  ? "Starting..."
+                  : "Waiting..."}
               </Typography>
             </Box>
             <Button

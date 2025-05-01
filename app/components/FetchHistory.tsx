@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useMongoDB } from "@/hooks/useMongoDB";
-import { RecordData, ECGMetrics, HRRPoint } from "@/types/types";
+import { RecordData, ECGMetrics } from "@/types/types";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import {
   Chart as ChartJS,
@@ -16,7 +16,8 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import annotationPlugin from "chartjs-plugin-annotation";
-import HRPhaseChart from "@/components/HRPhaseChart";
+import HRPhasesChart from "@/app/components/HRPhasesChart";
+import HRRChart from "@/app/components/HRRChart";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -33,7 +34,6 @@ interface FetchHistoryProps {
   user_name: string;
   records: RecordData[];
   setRecords: React.Dispatch<React.SetStateAction<RecordData[]>>;
-  chatRecord: RecordData | null;
   setChatRecord: React.Dispatch<React.SetStateAction<RecordData | null>>;
   setOpenChat: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -42,7 +42,6 @@ function FetchHistory({
   user_name,
   records,
   setRecords,
-  chatRecord,
   setChatRecord,
   setOpenChat,
 }: FetchHistoryProps) {
@@ -52,12 +51,8 @@ function FetchHistory({
   const { getUserByUsername, error, setError } = useMongoDB();
 
   const handleChatAboutRecord = (record: RecordData) => {
-    if (chatRecord?._id === record._id) {
-      // setChatRecord(null);
-    } else {
-      setChatRecord(record);
-      setOpenChat(true);
-    }
+    setChatRecord(record);
+    setOpenChat(true);
   };
 
   const fetchRecords = async () => {
@@ -124,28 +119,6 @@ function FetchHistory({
           data: visibleData.map((point) => point.value),
           borderColor: "rgb(75, 192, 192)",
           backgroundColor: "rgba(75, 192, 192, 0.5)",
-          tension: 0.1,
-        },
-      ],
-    };
-  };
-
-  const formatHRRChartData = (hrrPoints: HRRPoint[]) => {
-    return {
-      labels: hrrPoints.map((point) => `${point.time}s`),
-      datasets: [
-        {
-          label: "Heart Rate (bpm)",
-          data: hrrPoints.map((point) => point.hr),
-          borderColor: "rgb(255, 99, 132)",
-          backgroundColor: "rgba(255, 99, 132, 0.5)",
-          tension: 0.1,
-        },
-        {
-          label: "HRR (bpm)",
-          data: hrrPoints.map((point) => point.hrr),
-          borderColor: "rgb(54, 162, 235)",
-          backgroundColor: "rgba(54, 162, 235, 0.5)",
           tension: 0.1,
         },
       ],
@@ -225,34 +198,6 @@ function FetchHistory({
         title: {
           display: true,
           text: "ECG Value (µV)",
-        },
-      },
-    },
-  };
-
-  const hrrChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top" as const,
-      },
-      title: {
-        display: true,
-        text: "Heart Rate Recovery",
-      },
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: "Time since recovery start (seconds)",
-        },
-      },
-      y: {
-        title: {
-          display: true,
-          text: "Value (bpm)",
         },
       },
     },
@@ -356,20 +301,12 @@ function FetchHistory({
                     </div>
 
                     {record.hrr_points && record.hrr_points.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="font-medium text-gray-800 mb-2">
-                          Heart Rate Recovery
-                        </h4>
-                        <div className="h-64 w-full">
-                          <Line
-                            options={hrrChartOptions}
-                            data={formatHRRChartData(record.hrr_points)}
-                          />
-                        </div>
-                      </div>
+                      <HRRChart hrrPoints={record.hrr_points} />
                     )}
 
-                    {selectedRecord && <HRPhaseChart record={selectedRecord} />}
+                    {selectedRecord && (
+                      <HRPhasesChart record={selectedRecord} />
+                    )}
 
                     <div className="mt-4">
                       <h4 className="font-medium text-gray-800 mb-2">

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { ECGDataPoint, ECGMetrics, HRDataPoint } from "@/app/types/types";
-import { ECG_DEFAULT_SAMPLE_RATE } from "@/utils/constants";
 
 // Shared constants
 const MIN_RR_INTERVALS = 5;
@@ -8,17 +7,14 @@ const HRV_WINDOW_SIZE = 8;
 const MIN_HR_BPM = 40;
 const MAX_HR_BPM = 220;
 
-// Utility: Median
-const median = (arr: number[]) =>
-  arr.length === 0
-    ? 0
-    : arr.slice().sort((a, b) => a - b)[Math.floor(arr.length / 2)];
-
 // Utility: Mean
 const mean = (arr: number[]) =>
   arr.length === 0 ? 0 : arr.reduce((sum, v) => sum + v, 0) / arr.length;
 
-export function useECGMetrics(ecgData: ECGDataPoint[], hrData: HRDataPoint[]) {
+export default function useECGMetrics(
+  ecgData: ECGDataPoint[],
+  hrData: HRDataPoint[]
+) {
   const [metrics, setMetrics] = useState<ECGMetrics>({
     avgHeartRate: 0,
     medianHeartRate: 0,
@@ -181,5 +177,3 @@ export function useECGMetrics(ecgData: ECGDataPoint[], hrData: HRDataPoint[]) {
 
   return metrics;
 }
-
-export default useECGMetrics;

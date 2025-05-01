@@ -192,8 +192,8 @@ export async function POST(request: Request) {
     await connectMongoose();
 
     // Use the Mongoose model with the database name we want
-    const Record =
-      mongoose.models.Record || mongoose.model("Record", RecordSchema);
+    // const Record =
+    //   mongoose.models.Record || mongoose.model("Record", RecordSchema);
 
     console.log(
       `Saving record to ${DATABASE_NAME}.records for user: ${recordData.user_id}`

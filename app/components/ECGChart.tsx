@@ -40,11 +40,11 @@ const ECGChart: React.FC<ECGChartProps> = ({
   const formatTimestamp = (timestamp: number): string => {
     try {
       const date = new Date(timestamp);
-      return date.toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
+      return date.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
       });
     } catch (error) {
       console.error("Invalid timestamp:", timestamp);
@@ -58,12 +58,8 @@ const ECGChart: React.FC<ECGChartProps> = ({
     return ecgData.slice(-visibleDataPoints);
   }, [ecgData, visibleDataPoints]);
 
-  // console.log(`Rendering chart with ${visibleData.length} visible points`);
-
   const ecgChartData = {
-    labels: visibleData.map(
-      (point) => formatTimestamp(point.timestamp)
-    ),
+    labels: visibleData.map((point) => formatTimestamp(point.timestamp)),
     datasets: [
       {
         label: "ECG",
@@ -91,11 +87,11 @@ const ECGChart: React.FC<ECGChartProps> = ({
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             return `Value: ${context.parsed.y} µV`;
-          }
-        }
-      }
+          },
+        },
+      },
     },
     scales: {
       x: {
@@ -106,8 +102,8 @@ const ECGChart: React.FC<ECGChartProps> = ({
         },
         ticks: {
           autoSkip: true,
-          maxTicksLimit: 15
-        }
+          maxTicksLimit: 15,
+        },
       },
       y: {
         title: {
