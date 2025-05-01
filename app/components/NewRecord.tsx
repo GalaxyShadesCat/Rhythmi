@@ -134,7 +134,6 @@ function getDataForSegment<T extends { timestamp: number }>(
   );
 }
 
-// --- Main Component ---
 interface NewRecordProps {
   isConnected: boolean;
   isECGStreaming: boolean;
@@ -272,7 +271,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
       recovery_metrics: recoveryMetrics,
       activity_segments: activitySegments,
       hrr_points: hrrPoints,
-      notes: notes, // Add this line
+      notes: notes,
     };
   }, [
     user,
@@ -297,10 +296,10 @@ const NewRecord: React.FC<NewRecordProps> = ({
     setPhaseStart(null);
     setTimer(0);
     setActivitySegments([]);
-    setIsSessionDone(false);
     setNotes("");
-    setError(null);
+    setIsSessionDone(false);
     setSuccess(false);
+    setError(null);
   };
 
   const segmentStats = useMemo(
