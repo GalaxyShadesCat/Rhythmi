@@ -39,7 +39,6 @@ import useECGMetrics from "@/hooks/useECGMetrics";
 import useSignalQuality from "@/hooks/useSignalQuality";
 import { useMongoDB } from "@/hooks/useMongoDB";
 
-// --- Constants and Helpers ---
 export const PHASES: ActivityType[] = ["rest", "exercise", "recovery"];
 export const PHASE_LABELS: Record<ActivityType, string> = {
   rest: "Rest",
@@ -68,6 +67,7 @@ Chart.register(
   Filler
 );
 
+// Function to calculate metrics for a phase
 export function calculateStatsForSegment(
   hrHistory: HRDataPoint[],
   segment: ActivitySegment
@@ -77,13 +77,13 @@ export function calculateStatsForSegment(
   );
   if (!points.length) return null;
   const values = points.map((p) => p.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const mean = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+  const min = Math.min(...values); // Min heart rate
+  const max = Math.max(...values); // Max heart rate
+  const mean = Math.round(values.reduce((a, b) => a + b, 0) / values.length); // Avg heart rate
   return { min, max, mean, count: values.length };
 }
 
-// Util: Get HR at or just after a certain timestamp
+// Function to get HR at or just after a certain timestamp
 function getHRAtOrAfter(
   hrData: HRDataPoint[],
   timestamp: number
@@ -92,7 +92,7 @@ function getHRAtOrAfter(
   return next ? next.value : null;
 }
 
-// Calculate HRR points every 30s, up to e.g. 2 mins
+// Function to calculate HRR points every 30s, up to e.g. 2 mins
 function getRecoveryHRR(
   hrData: HRDataPoint[],
   exerciseSegment: ActivitySegment | undefined,
@@ -125,6 +125,8 @@ function getRecoveryHRR(
   }
   return points;
 }
+
+// Function to get data points for a specific segment
 function getDataForSegment<T extends { timestamp: number }>(
   dataPoints: T[],
   segment: ActivitySegment
@@ -149,24 +151,25 @@ const NewRecord: React.FC<NewRecordProps> = ({
   hrHistory,
   user,
 }) => {
-  const [phaseIdx, setPhaseIdx] = useState(0);
-  const [phaseStart, setPhaseStart] = useState<number | null>(null);
+  const [phaseIdx, setPhaseIdx] = useState(0); // Current phase index
+  const [phaseStart, setPhaseStart] = useState<number | null>(null); // Phase start time
   const [activitySegments, setActivitySegments] = useState<ActivitySegment[]>(
     []
   );
-  const [timer, setTimer] = useState(0);
+  const [timer, setTimer] = useState(0); // Timer for tracking phase duration
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const [isSessionDone, setIsSessionDone] = useState(false);
+  const [isSessionDone, setIsSessionDone] = useState(false); // Session completion status
   const { uploadRecord, loading, error, success, setError, setSuccess } =
     useMongoDB();
   const { calculateSignalQuality } = useSignalQuality();
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(""); // Session notes
 
   const currentPhase = PHASES[phaseIdx];
   const restSegment = activitySegments.find((s) => s.type === "rest");
   const exerciseSegment = activitySegments.find((s) => s.type === "exercise");
   const recoverySegment = activitySegments.find((s) => s.type === "recovery");
 
+  // Memoized ECG and HR data for each phase
   const restECG = useMemo(
     () => (restSegment ? getDataForSegment(ecgHistory, restSegment) : []),
     [ecgHistory, restSegment]
@@ -197,14 +200,18 @@ const NewRecord: React.FC<NewRecordProps> = ({
     [hrHistory, recoverySegment]
   );
 
+  // Calculate metrics for each phase
   const restMetrics = useECGMetrics(restECG, restHR);
   const exerciseMetrics = useECGMetrics(exerciseECG, exerciseHR);
   const recoveryMetrics = useECGMetrics(recoveryECG, recoveryHR);
+
+  // Calculate HRR points
   const hrrPoints = useMemo(
     () => getRecoveryHRR(hrHistory, exerciseSegment, recoverySegment),
     [hrHistory, exerciseSegment, recoverySegment]
   );
 
+  // Calculate base HR during rest
   const baseHR = useMemo(() => {
     if (!restSegment) return "--";
     const restPoints = hrHistory.filter(
@@ -217,6 +224,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     return avg;
   }, [hrHistory, restSegment]);
 
+  // Calculate peak HR during exercise
   const peakHR = useMemo(() => {
     if (!exerciseSegment) return "--";
     const exercisePoints = hrHistory.filter(
@@ -228,6 +236,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     return Math.max(...exercisePoints.map((p) => p.value));
   }, [hrHistory, exerciseSegment]);
 
+  // Prepare record data for upload
   const record: RecordData | null = useMemo(() => {
     if (
       !user ||
@@ -285,12 +294,14 @@ const NewRecord: React.FC<NewRecordProps> = ({
     notes,
   ]);
 
+  // Handle record upload
   const handleUpload = () => {
     if (record) {
       uploadRecord(record);
     }
   };
 
+  // Reset session state
   const handleAddNewRecord = () => {
     setPhaseIdx(0);
     setPhaseStart(null);
@@ -302,6 +313,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     setError(null);
   };
 
+  // Calculate segment statistics
   const segmentStats = useMemo(
     () =>
       activitySegments.map((seg) => {
@@ -438,6 +450,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
 
       {isSessionDone && (
         <Card sx={{ mb: 2 }}>
+          {/* Session Notes */}
           <CardContent>
             <Typography variant="h6" mb={2}>
               Session Notes
@@ -455,16 +468,18 @@ const NewRecord: React.FC<NewRecordProps> = ({
         </Card>
       )}
 
+      {/* Session Summary */}
       <RecordSummaryCard
         segmentStats={segmentStats}
         baseHR={baseHR}
         peakHR={peakHR}
       />
       {hrrPoints.length > 0 && <HRRChart hrrPoints={hrrPoints} />}
-
+      {/* ECG Graph */}
       <ECGChart ecgData={ecgHistory}></ECGChart>
       {record && <HRPhasesChart record={record} />}
       <Box display="flex" justifyContent="center" mt={4} mb={2}>
+        {/* Reset Button */}
         <Button
           variant="outlined"
           color="secondary"

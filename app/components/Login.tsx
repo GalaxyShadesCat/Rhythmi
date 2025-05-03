@@ -23,8 +23,9 @@ type LoginProps = {
   clearUser: () => void;
 };
 
+// Main function
 export default function Login({ user, saveUser, clearUser }: LoginProps) {
-  const [isMounted, setIsMounted] = useState(false);
+  const [isMounted, setIsMounted] = useState(false); // Component mounted state
   const {
     createUser,
     getUserByUsername,
@@ -35,8 +36,8 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
     setSuccess,
   } = useMongoDB();
 
-  const [mode, setMode] = useState<"login" | "create">("login");
-  const [formData, setFormData] = useState<Omit<User, "_id">>({
+  const [mode, setMode] = useState<"login" | "create">("login"); // Login or account creation mode
+  const [formData, setFormData] = useState<Omit<User, "_id">>({ // Account registration form
     user_name: "",
     birth_year: new Date().getFullYear(),
     gender: "other",
@@ -46,6 +47,7 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
     setIsMounted(true);
   }, []);
 
+  // Handle changes in text fields
   const handleTextChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -58,6 +60,7 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
     setSuccess(false);
   };
 
+  // Handle changes in select fields
   const handleSelectChange = (e: SelectChangeEvent) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -68,14 +71,15 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
     setSuccess(false);
   };
 
+  // Handle form submission
   const handleSubmit = async () => {
     setError("");
     setSuccess(false);
 
-    if (mode === "create") {
+    if (mode === "create") { // Check if in account creation mode
       const newUser = await createUser(formData);
       if (newUser) saveUser(newUser);
-    } else {
+    } else { // Check if existing user
       const existingUser = await getUserByUsername(formData.user_name);
       if (existingUser) saveUser(existingUser);
     }
@@ -146,6 +150,7 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
           elevation={1}
           sx={{ width: "100%", mt: 2, px: 3, py: 4, borderRadius: 2 }}
         >
+          {/* Username Input */}
           <TextField
             label="Username"
             name="user_name"
@@ -157,6 +162,7 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
 
           {mode === "create" && (
             <>
+            {/* Birth Year Input */}
               <TextField
                 label="Birth Year"
                 name="birth_year"
@@ -171,6 +177,7 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
                 }}
               />
               <FormControl fullWidth margin="normal">
+                {/* Gender Selection */}
                 <InputLabel>Gender</InputLabel>
                 <Select
                   name="gender"
@@ -196,7 +203,7 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
               Success!
             </Typography>
           )}
-
+          {/* Form Submission Button */}
           <Button
             fullWidth
             variant="contained"
@@ -227,6 +234,7 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
                 setSuccess(false);
               }}
             >
+              {/* Instruction Messages */}
               {mode === "create"
                 ? "Already have an account? Log in"
                 : "New user? Create an account"}

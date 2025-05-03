@@ -19,6 +19,7 @@ import { marked } from "marked";
 import { RecordData, User } from "@/types/types";
 import { HOVER_BLUE, PRIMARY_BLUE } from "@/utils/constants";
 
+// Define health metrics guidelines
 const metricGuidelines = `
 | Metric | Normal Range | Abnormal Values | Potential Issues |
 |--------|---------------|------------------|------------------|
@@ -27,16 +28,17 @@ const metricGuidelines = `
 | Heart Rate Recovery | >18 bpm | <12 bpm | Poor fitness |
 `;
 
-const CHAT_MESSAGES_KEY = "chat_messages";
+const CHAT_MESSAGES_KEY = "chat_messages"; // Local storage key
 
 type HealthChatbotProps = {
-  user: User;
-  openChat: boolean;
+  user: User; // User data
+  openChat: boolean; // Chat toggle state
   setOpenChat: React.Dispatch<React.SetStateAction<boolean>>;
-  chatRecord: RecordData | null;
-  records: RecordData[];
+  chatRecord: RecordData | null; // Current record data
+  records: RecordData[]; // Recent records data
 };
 
+// Main function
 function HealthChatbot({
   user,
   openChat,
@@ -44,11 +46,11 @@ function HealthChatbot({
   chatRecord,
   records,
 }: HealthChatbotProps) {
-  const [input, setInput] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [input, setInput] = useState(""); // User input
   const [messages, setMessages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Loading status
 
+  // Reformat record for display
   function formatRecord(record: RecordData) {
     return `
   Date: ${record.datetime}
@@ -72,10 +74,12 @@ function HealthChatbot({
   `;
   }
 
+  // Memoized string for recent records
   const recentRecordsString = useMemo(() => {
     return records.slice(-5).map(formatRecord).join("\n");
   }, [records]);
 
+  // Memoized string for current records
   const selectedRecordString = useMemo(() => {
     if (chatRecord) {
       return formatRecord(chatRecord);
@@ -85,12 +89,12 @@ function HealthChatbot({
   }, [chatRecord]);
 
   const age = new Date().getFullYear() - user.birth_year;
+  // System prompt
   const SYSTEM_PROMPT = useMemo(
     () => ({
       role: "system",
       content: `You are a helpful health assistant. The user will ask about their cardiovascular and ECG data. Keep your responses short, simple and easy to understand. Reference the following medical metric guidelines:\n\n${metricGuidelines}\n\nUser Info:\nUsername: ${user.user_name}\nGender: ${user.gender}\nBirth Year: ${user.birth_year}\nAge: ${age}\n\nRecent Records:\n${recentRecordsString}\n\nSelected Record for Discussion (but user may be asking about recent records):\n${selectedRecordString}\n\nThese records were collected when a user wore a Polar H10 heart rate sensor where they were at rest, exercise/walk for 5 to 6 minutes and then recovered while monitoring their heart rate recovery. If the durations are too short, the data may not be accurate. The user may ask about their heart rate, heart rate variability, and other metrics. You can also provide general health tips based on the user's data. If the user asks about a specific metric, provide a brief explanation and its normal range. If the user asks about their health, provide general advice based on their data. If the user asks about a specific record, provide details about that record. If the user asks about a specific metric, provide details about that metric.`,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, recentRecordsString, selectedRecordString]
   );
 
@@ -116,6 +120,7 @@ function HealthChatbot({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Send message to chatbot
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -124,10 +129,10 @@ function HealthChatbot({
       { role: "user", content: input.trim() },
     ];
     setMessages(updatedMessages);
-    setInput("");
-    setLoading(true);
+    setInput(""); // Clear input field
+    setLoading(true); // Update loading state
 
-    const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+    const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY; // Get API key
     if (!OPENROUTER_API_KEY) {
       console.error("Missing OpenRouter API key");
       setLoading(false);
@@ -135,6 +140,7 @@ function HealthChatbot({
     }
 
     try {
+      // POST request to OpenRouter API
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -150,13 +156,13 @@ function HealthChatbot({
       });
 
       const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content;
+      const reply = data.choices?.[0]?.message?.content; // Get chatbot reply
 
       setMessages([
         ...updatedMessages,
         {
           role: "assistant",
-          content: reply || "Sorry, I couldn't generate a response.",
+          content: reply || "Sorry, I couldn't generate a response.", // Display chatbot reply
         },
       ]);
     } catch (err) {
@@ -169,7 +175,7 @@ function HealthChatbot({
         },
       ]);
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset loading state
     }
   };
 

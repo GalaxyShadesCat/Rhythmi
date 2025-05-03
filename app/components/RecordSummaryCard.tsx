@@ -23,6 +23,7 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
       <Typography variant="h6" mb={2}>
         Session Summary
       </Typography>
+      {/* HR Stats */}
       <Box display="flex" gap={4} mb={2} flexWrap="wrap">
         <Typography variant="subtitle1">
           <b>Base HR:</b> {baseHR} bpm
@@ -52,6 +53,7 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
                 <Typography variant="subtitle2" fontWeight={600}>
                   {PHASE_LABELS[seg.type] || seg.type}
                 </Typography>
+                {/* Signal Quality */}
                 {seg.signalQuality && (
                   <Chip
                     label={`Signal Quality: ${seg.signalQuality}`}
@@ -74,6 +76,7 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
                 gap={2}
                 fontSize="0.96rem"
               >
+                {/* Phase Metrics */}
                 <Box>
                   <span style={{ color: "#6b7280" }}>Avg HR:</span>{" "}
                   <span style={{ fontWeight: 500 }}>

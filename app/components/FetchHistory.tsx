@@ -30,7 +30,6 @@ ChartJS.register(
   annotationPlugin
 );
 
-// Define props for type safety
 interface FetchHistoryProps {
   user_name: string;
   records: RecordData[];

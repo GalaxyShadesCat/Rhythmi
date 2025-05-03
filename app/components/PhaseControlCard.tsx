@@ -18,12 +18,14 @@ import {
 } from "@/components/NewRecord";
 import { ActivityType } from "@/types/types";
 
+// Function to determine color based on phase
 const getPhaseColor = (phase: ActivityType) => {
   if (phase === "rest") return "primary";
   if (phase === "exercise") return "success";
   return "error";
 };
 
+// Function to reformat time
 const formatMs = (ms: number) => {
   const min = Math.floor(ms / 60000);
   const sec = Math.floor((ms % 60000) / 1000);
@@ -75,6 +77,7 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
           <Typography variant="body2" color="text.secondary" mb={2}>
             Upload your data to MongoDB.
           </Typography>
+          {/* Upload Button */}
           <Button
             variant="contained"
             color="primary"
@@ -97,12 +100,14 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
   return (
     <Card sx={{ mb: 2 }}>
       <CardContent>
+        {/* Current Phase Display */}
         <Box display="flex" alignItems="center" mb={1}>
           {PHASE_ICONS[currentPhase]}
           <Typography variant="h6" ml={1}>
             {PHASE_LABELS[currentPhase]} Phase
           </Typography>
         </Box>
+        {/* Instructions */}
         <Typography variant="body2" color="text.secondary">
           {currentPhase === "rest" &&
             "Sit and relax for at least 3 minutes. Press next to start 'exercise' phase when ready."}
@@ -111,6 +116,7 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
           {currentPhase === "recovery" &&
             "Rest until your heart rate returns to your resting value, then finish."}
         </Typography>
+        {/* Timer */}
         <Stack direction="row" alignItems="center" spacing={2} mt={2}>
           <Typography variant="h4" color={getPhaseColor(currentPhase)}>
             {formatMs(timer)}
@@ -126,6 +132,7 @@ const PhaseControlCard: React.FC<PhaseControlCardProps> = ({
               />
             </Box>
           )}
+          {/* Switch Phase Button */}
           {!phaseStart ? (
             <Button
               variant="contained"

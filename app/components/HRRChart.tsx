@@ -6,6 +6,7 @@ interface HRRChartProps {
   hrrPoints: HRRPoint[];
 }
 
+// HRR graph configurations
 const hrrChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -34,6 +35,7 @@ const hrrChartOptions = {
   },
 };
 
+// HRR graph data handling
 const formatHRRChartData = (hrrPoints: HRRPoint[]) => {
   return {
     labels: hrrPoints.map((point) => `${point.time}s`),
