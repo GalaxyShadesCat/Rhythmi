@@ -1,153 +1,128 @@
-# Rhythmi - Heart Rate Monitoring Application
+# 💙 Rhythmi
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Welcome to **Rhythmi**, the ultimate heart rate monitoring app. Whether you're training like an athlete, recovering from a Netflix binge, or just obsessed with biometrics — this app lets you visualize, analyze, and understand your heartbeat in real time 📈
 
-## Getting Started
+## 🚀 Quick Start Guide
 
-First, run the development server:
+Clone the repo and get the dev server running:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Project Overview
-Rhythmi is a comprehensive heart rate monitoring application that allows users to track and analyze their heart rate data in real-time. The application supports Bluetooth heart rate sensors (like Polar H10) and provides detailed analysis of heart rate patterns during rest, exercise, and recovery phases.
-
-### Key Features
-- Real-time heart rate monitoring via Bluetooth
-- ECG data streaming and analysis
-- Heart rate variability (HRV) calculations
-- Signal quality assessment (both statistical and ML-based)
-- Exercise session recording with rest, exercise, and recovery phases
-- Historical data tracking and visualization
-- Health chatbot for data interpretation
-- User profile management
-- MongoDB integration for data persistence
-
-## Signal Quality Assessment
-The application provides two methods for assessing ECG signal quality:
-
-### Statistical Method (Default)
-- Uses standard deviation of the signal
-- Categories: "excellent" (< 300), "good" (< 400), "fair" (< 500), "poor" (≥ 500)
-- Based on the most recent 5 seconds of data
-
-### ML-based Method (Optional)
-- Uses a TensorFlow.js model for classification
-- Categories: "excellent" (class 2), "good" (class 1), "poor" (class 0)
-- Features include statistical measures, frequency domain analysis, and peak detection
-- Requires model files in `/public/tfjs_model/model.json` and `/public/scaler.json`
-- To use ML-based assessment, uncomment the relevant lines in `NewRecord.tsx`
-
-## Installation Instructions
-
-### 2.1 Prerequisites
-- Node.js (v18 or higher)
-- npm (v9 or higher)
-- MongoDB (local instance or MongoDB Atlas account)
-- Bluetooth-enabled device (for heart rate sensor connection)
-
-### 2.2 Install Dependencies
-```bash
-# Clone the repository
 git clone [repository-url]
 cd rhythmi
+npm install
+npm run dev
+```
 
-# Install dependencies
+Then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🩺 What is Rhythmi?
+
+Rhythmi is a full-stack heart rate analytics platform for real-time tracking and intelligent insight generation from ECG signals. We support **Bluetooth-connected devices** (like the Polar H10) and offer everything about your heart from basic tracking to **AI consultation** about your health.
+
+### 🔑 Core Features
+
+- 🫀 Real-time Heart Rate Monitoring via Bluetooth
+- 📡 ECG Signal Streaming & Visualization
+- 🌿 HRV (Heart Rate Variability) Analysis
+- 🧠 Signal Quality Assessment
+  - 📊 Statistical (std-based)
+  - 🤖 Machine Learning (TensorFlow.js)
+- 🏃 Session Logging (rest, exercise, recovery)
+- 💬 Health Chatbot
+- 📅 Historical Data & Trends (Chart.js)
+- 👤 User Profiles
+- 🍃 MongoDB Integration
+
+## 🧪 Signal Quality Assessment
+
+### 📊 Statistical (Default)
+
+- Based on **standard deviation** of 5 seconds of ECG data.
+- Categories:
+  - 🟢 `Excellent`: < 300
+  - 🟡 `Good`: < 400
+  - 🟠 `Fair`: < 500
+  - 🔴 `Poor`: ≥ 500
+
+### 🤖 ML-based (Optional)
+
+- Check that `TensorFlow.js` model files are imported:
+  - `/public/tfjs_model/model.json`
+  - `/public/scaler.json`
+- Categories:
+  - 🔴 `Poor`: class 0
+  - 🟡 `Good`: class 1
+  - 🟢 `Excellent`: class 2
+- Features used:
+  - Statistical measures
+  - Frequency domain transforms
+  - Peak detection
+
+**To activate ML mode**, go to `NewRecord.tsx` and uncomment the relevant lines.
+
+## 🛠️ Installation Instructions
+
+### 📦 Prerequisites
+
+| Requirement      | Version         |
+| ---------------- | --------------- |
+| Node.js          | ≥ 18            |
+| npm              | ≥ 9             |
+| MongoDB          | Local or Atlas  |
+| Bluetooth Device | e.g., Polar H10 |
+
+### 📥 Install & Setup
+
+```bash
 npm install
 ```
 
-### 2.3 Set up Environment Variables
-Create a `.env.local` file in the root directory with the following variables:
-```env
-# Required: MongoDB connection string
-MONGODB_URI=your_mongodb_connection_string
+Create your `.env.local` file:
 
-# Required: OpenRouter API key for the health chatbot
+```env
+MONGODB_URI=your_mongodb_connection_string
 NEXT_PUBLIC_OPENROUTER_API_KEY=your_openrouter_api_key
 ```
 
-> **Important**: The application will not build or run without these environment variables. Make sure to:
-> 1. Create the `.env.local` file before running the development server
-> 2. Use valid MongoDB connection strings (e.g., `mongodb+srv://username:password@cluster.mongodb.net/database`)
-> 3. Keep your API keys secure and never commit them to version control
+⚠️ Don't forget:
+- Never commit `.env.local` to GitHub.
+- Make sure the keys are valid.
+- The app won’t start without them.
 
-### 2.4 Start the Development Server
-```bash
-# Start the development server
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🧑‍💻 Development Commands
 
-### 2.5 Open the App in Your Browser
-The application will be available at `http://localhost:3000`. You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Task             | Command         |
+| ---------------- | --------------- |
+| Dev server       | `npm run dev`   |
+| Production build | `npm run build` |
+| Start production | `npm run start` |
+| Lint check       | `npm run lint`  |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🗃️ Connecting to MongoDB
 
-## Learn More
+You’ll need:
 
-To learn more about Next.js, take a look at the following resources:
+1. A MongoDB Atlas cluster (or local instance)
+2. The connection string in `.env.local`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Collections created:
+- 🗂️ `records`
+- 👥 `users`: your name, birthyear, and gender
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🚢 Deploying with Vercel
 
-## Connecting to MongoDB
-To link the app to your MongoDB database:
+1. Push your repo to GitHub 📤
+2. Connect GitHub to [Vercel](https://vercel.com)
+3. Set the environment variables in Vercel dashboard 🔐
+4. Deploy your app! 🌐
 
-1. Create a MongoDB Atlas cluster or use a local MongoDB instance
-2. Copy the connection string from MongoDB Atlas and paste it into the `.env.local` file
-3. The application will automatically create the necessary collections:
-   - `records`: Stores heart rate and ECG data
-   - `users`: Stores user profiles and preferences
+## 🧱 Tech Stack Breakdown
 
-## Deployment
-The application can be deployed to Vercel:
-
-1. Push your code to a GitHub repository
-2. Connect your repository to Vercel
-3. Configure the environment variables in Vercel's dashboard
-4. Deploy the application
-
-## Technology Stack
-- **Frontend**: Next.js, React, Material-UI
-- **Backend**: Next.js API routes
-- **Database**: MongoDB
-- **State Management**: React Hooks
-- **Styling**: Tailwind CSS, Material-UI
-- **Charts**: Chart.js
-- **AI Integration**: OpenRouter API
-- **Fonts**: 
-  - Primary: Inter (sans-serif)
-  - Secondary: Roboto Mono (monospace)
-  - Icons: Material Icons
-
-## Development
-- `npm run dev`: Start development server
-- `npm run build`: Build for production
-- `npm run start`: Start production server
-- `npm run lint`: Run ESLint
-
-## Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+| Layer    | Tech                               |
+| -------- | ---------------------------------- |
+| Frontend | Next.js, React, Tailwind CSS, MUI  |
+| Backend  | Next.js API routes                 |
+| Database | MongoDB (Atlas or Local)           |
+| Charts   | Chart.js                           |
+| AI       | OpenRouter API, TensorFlow.js      |
+| Fonts    | Inter, Roboto Mono, Material Icons |
