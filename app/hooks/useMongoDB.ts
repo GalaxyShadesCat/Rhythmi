@@ -2,16 +2,18 @@ import { useState } from "react";
 import { RecordData, User } from "@/types/types";
 
 export function useMongoDB() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false); // Loading status
+  const [error, setError] = useState<string | null>(null); // Errors encountered
+  const [success, setSuccess] = useState(false); // Success status
 
+  // Function to upload new user data to DB
   const createUser = async (user: Omit<User, "_id">): Promise<User | null> => {
     setLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
+      // POST request for user data
       const response = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -27,7 +29,7 @@ export function useMongoDB() {
 
       const createdUser = await response.json();
       setSuccess(true);
-      return createdUser;
+      return createdUser; // Return user data created
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -36,14 +38,16 @@ export function useMongoDB() {
       }
       return null;
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset loading state
     }
   };
 
+  // Function to retrieve user data by username
   const getUserByUsername = async (user_name: string): Promise<User | null> => {
     setLoading(true);
     setError(null);
     try {
+      // GET request for user data
       const response = await fetch(`/api/users/${user_name}`);
       if (!response.ok) {
         throw new Error("User not found");
@@ -57,10 +61,11 @@ export function useMongoDB() {
       }
       return null;
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset loading state
     }
   };
 
+  // Function to upload record data
   const uploadRecord = async (record: RecordData) => {
     setLoading(true);
     setError(null);
@@ -69,6 +74,7 @@ export function useMongoDB() {
     console.log("Uploading record:", record);
 
     try {
+      // POST request for record data
       const response = await fetch("/api/records", {
         method: "POST",
         headers: {
@@ -90,7 +96,7 @@ export function useMongoDB() {
       }
       return null;
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset loading state
     }
   };
 

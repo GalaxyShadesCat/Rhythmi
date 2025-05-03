@@ -1,10 +1,12 @@
+// User data
 export interface User {
-  _id?: string;
+  _id?: string; // Unique across all users
   user_name: string; // Unique across all users
   birth_year: number;
   gender: string;
 }
 
+// Record data
 export interface RecordData {
   _id?: string;
   user_id: string; // Reference to User._id
@@ -19,22 +21,26 @@ export interface RecordData {
   notes?: string;
 }
 
+// Single ECG data point
 export interface ECGDataPoint {
   timestamp: number;
   value: number;
 }
 
+// Single HR data point
 export interface HRDataPoint {
   timestamp: number;
   value: number;
 }
 
+// Single HRR data point
 export interface HRRPoint {
   time: number; // Seconds since recovery start
   hr: number | null;
   hrr: number | null;
 }
 
+// ECG metrics
 export interface ECGMetrics {
   avgHeartRate: number;
   medianHeartRate: number;
@@ -47,20 +53,24 @@ export interface ECGMetrics {
   duration: number; // ms
 }
 
+// Color mapping for different activity types
 export const ACTIVITY_COLORS: Record<ActivityType, string> = {
   rest: "blue",
   exercise: "green",
   recovery: "red",
 };
 
+// Type definition for activity types
 export type ActivityType = "rest" | "exercise" | "recovery";
 
+// Timestamp of activity switch
 export interface ActivitySegment {
   type: keyof typeof ACTIVITY_COLORS;
   start: number;
   end: number;
 }
 
+// Color mapping for different phases in HR graph
 export const PHASE_COLORS: Record<ActivityType, string> = {
   rest: "#a5b4fc",
   exercise: "#bbf7d0",
