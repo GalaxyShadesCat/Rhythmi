@@ -3,6 +3,12 @@ import { Card, CardContent, Typography, Box, Stack, Chip } from "@mui/material";
 import { ActivitySegment, ECGMetrics, PHASE_COLORS } from "@/types/types";
 import { calculateStatsForSegment, PHASE_LABELS } from "@/components/NewRecord";
 
+// Simple validation function
+const formatValue = (value: number): string => {
+  if (isNaN(value) || !isFinite(value) || value < 0) return "--";
+  return Math.round(value).toString();
+};
+
 interface RecordSummaryCardProps {
   segmentStats: (ActivitySegment & {
     stats: ReturnType<typeof calculateStatsForSegment>;
@@ -26,10 +32,10 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
       {/* HR Stats */}
       <Box display="flex" gap={4} mb={2} flexWrap="wrap">
         <Typography variant="subtitle1">
-          <b>Base HR:</b> {baseHR} bpm
+          <b>Base HR:</b> {typeof baseHR === 'number' ? formatValue(baseHR) + " bpm" : baseHR}
         </Typography>
         <Typography variant="subtitle1">
-          <b>Peak HR:</b> {peakHR} bpm
+          <b>Peak HR:</b> {typeof peakHR === 'number' ? formatValue(peakHR) + " bpm" : peakHR}
         </Typography>
       </Box>
       <Stack spacing={2}>
@@ -80,37 +86,37 @@ const RecordSummaryCard: React.FC<RecordSummaryCardProps> = ({
                 <Box>
                   <span style={{ color: "#6b7280" }}>Avg HR:</span>{" "}
                   <span style={{ fontWeight: 500 }}>
-                    {Math.round(seg.metrics.avgHeartRate)} bpm
+                    {formatValue(seg.metrics.avgHeartRate)} bpm
                   </span>
                 </Box>
                 <Box>
                   <span style={{ color: "#6b7280" }}>Min HR:</span>{" "}
                   <span style={{ fontWeight: 500 }}>
-                    {Math.round(seg.metrics.minHeartRate)} bpm
+                    {formatValue(seg.metrics.minHeartRate)} bpm
                   </span>
                 </Box>
                 <Box>
                   <span style={{ color: "#6b7280" }}>Max HR:</span>{" "}
                   <span style={{ fontWeight: 500 }}>
-                    {Math.round(seg.metrics.maxHeartRate)} bpm
+                    {formatValue(seg.metrics.maxHeartRate)} bpm
                   </span>
                 </Box>
                 <Box>
                   <span style={{ color: "#6b7280" }}>HRV:</span>{" "}
                   <span style={{ fontWeight: 500 }}>
-                    {Math.round(seg.metrics.heartRateVariability)} ms
+                    {formatValue(seg.metrics.heartRateVariability)} ms
                   </span>
                 </Box>
                 <Box>
                   <span style={{ color: "#6b7280" }}>Total Beats:</span>{" "}
                   <span style={{ fontWeight: 500 }}>
-                    {seg.metrics.totalBeats}
+                    {formatValue(seg.metrics.totalBeats)}
                   </span>
                 </Box>
                 <Box>
                   <span style={{ color: "#6b7280" }}>Duration:</span>{" "}
                   <span style={{ fontWeight: 500 }}>
-                    {Math.round(seg.metrics.duration / 1000)} s
+                    {formatValue(seg.metrics.duration / 1000)} s
                   </span>
                 </Box>
               </Box>

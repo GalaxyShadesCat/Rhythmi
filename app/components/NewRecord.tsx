@@ -37,6 +37,7 @@ import RecordSummaryCard from "@/components/RecordSummaryCard";
 import PhaseControlCard from "@/components/PhaseControlCard";
 import useECGMetrics from "@/hooks/useECGMetrics";
 import useSignalQuality from "@/hooks/useSignalQuality";
+// import useMLSignalQuality from "@/hooks/useMLSignalQuality"; // Uncomment to use ML-based signal quality assessment
 import { useMongoDB } from "@/hooks/useMongoDB";
 
 export const PHASES: ActivityType[] = ["rest", "exercise", "recovery"];
@@ -51,11 +52,12 @@ export const PHASE_ICONS: Record<ActivityType, JSX.Element> = {
   recovery: <RestoreIcon />,
 };
 export const PHASE_MINIMUM_DURATIONS = {
-  rest: 10 * 1000, // 10 seconds for testing (was 3 minutes)
-  exercise: 10 * 1000, // 10 seconds for testing (was 6 minutes)
-  recovery: 0,
+  rest: 3 * 60 * 1000, // 3 minutes
+  exercise: 6 * 60 * 1000, // 6 minutes
+  recovery: 30 * 1000, // 30 seconds
 };
 
+// Register Chart.js components
 Chart.register(
   LineController,
   LineElement,
@@ -67,7 +69,10 @@ Chart.register(
   Filler
 );
 
-// Function to calculate metrics for a phase
+/**
+ * Calculate heart rate statistics for a given activity segment
+ * Returns min, max, mean HR and number of data points
+ */
 export function calculateStatsForSegment(
   hrHistory: HRDataPoint[],
   segment: ActivitySegment
@@ -126,7 +131,9 @@ function getRecoveryHRR(
   return points;
 }
 
-// Function to get data points for a specific segment
+/**
+ * Filter data points for a specific activity segment
+ */
 function getDataForSegment<T extends { timestamp: number }>(
   dataPoints: T[],
   segment: ActivitySegment
@@ -144,6 +151,10 @@ interface NewRecordProps {
   user: User;
 }
 
+/**
+ * Main component for recording new ECG sessions
+ * Handles the three phases: rest, exercise, and recovery
+ */
 const NewRecord: React.FC<NewRecordProps> = ({
   isConnected,
   isECGStreaming,
@@ -151,25 +162,26 @@ const NewRecord: React.FC<NewRecordProps> = ({
   hrHistory,
   user,
 }) => {
-  const [phaseIdx, setPhaseIdx] = useState(0); // Current phase index
-  const [phaseStart, setPhaseStart] = useState<number | null>(null); // Phase start time
-  const [activitySegments, setActivitySegments] = useState<ActivitySegment[]>(
-    []
-  );
-  const [timer, setTimer] = useState(0); // Timer for tracking phase duration
+  // State for managing recording phases
+  const [phaseIdx, setPhaseIdx] = useState(0);
+  const [phaseStart, setPhaseStart] = useState<number | null>(null);
+  const [activitySegments, setActivitySegments] = useState<ActivitySegment[]>([]);
+  const [timer, setTimer] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [isSessionDone, setIsSessionDone] = useState(false); // Session completion status
   const { uploadRecord, loading, error, success, setError, setSuccess } =
     useMongoDB();
   const { calculateSignalQuality } = useSignalQuality();
-  const [notes, setNotes] = useState(""); // Session notes
+  // const { calculateSignalQuality } = useMLSignalQuality(); // Uncomment to use ML-based signal quality assessment
+  const [notes, setNotes] = useState("");
 
+  // Get current phase and segments
   const currentPhase = PHASES[phaseIdx];
   const restSegment = activitySegments.find((s) => s.type === "rest");
   const exerciseSegment = activitySegments.find((s) => s.type === "exercise");
   const recoverySegment = activitySegments.find((s) => s.type === "recovery");
 
-  // Memoized ECG and HR data for each phase
+  // Extract ECG data for each phase
   const restECG = useMemo(
     () => (restSegment ? getDataForSegment(ecgHistory, restSegment) : []),
     [ecgHistory, restSegment]
@@ -185,6 +197,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     [ecgHistory, recoverySegment]
   );
 
+  // Extract heart rate data for each phase
   const restHR = useMemo(
     () => (restSegment ? getDataForSegment(hrHistory, restSegment) : []),
     [hrHistory, restSegment]
@@ -204,14 +217,14 @@ const NewRecord: React.FC<NewRecordProps> = ({
   const restMetrics = useECGMetrics(restECG, restHR);
   const exerciseMetrics = useECGMetrics(exerciseECG, exerciseHR);
   const recoveryMetrics = useECGMetrics(recoveryECG, recoveryHR);
-
-  // Calculate HRR points
+  
+  // Calculate HRR points for recovery analysis
   const hrrPoints = useMemo(
     () => getRecoveryHRR(hrHistory, exerciseSegment, recoverySegment),
     [hrHistory, exerciseSegment, recoverySegment]
   );
 
-  // Calculate base HR during rest
+  // Calculate baseline and peak heart rates
   const baseHR = useMemo(() => {
     if (!restSegment) return "--";
     const restPoints = hrHistory.filter(
@@ -294,7 +307,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     notes,
   ]);
 
-  // Handle record upload
+  // Handlers for phase control and data upload
   const handleUpload = () => {
     if (record) {
       uploadRecord(record);
@@ -313,7 +326,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     setError(null);
   };
 
-  // Calculate segment statistics
+  // Calculate statistics and signal quality for each segment
   const segmentStats = useMemo(
     () =>
       activitySegments.map((seg) => {
@@ -347,7 +360,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
     ]
   );
 
-  // Determine if enough time has passed to advance to next phase
+  // Check if current phase meets minimum duration requirement
   const canAdvancePhase = useMemo(() => {
     if (!phaseStart) return false;
 
@@ -374,13 +387,12 @@ const NewRecord: React.FC<NewRecordProps> = ({
     };
   }, [phaseStart]);
 
-  // Auto-advance for rest/exercise has been removed to ensure manual progression only
-
-  // Phase Handlers
+  // Phase control handlers
   const handleStartPhase = () => {
     const now = Date.now();
     setPhaseStart(now);
   };
+
   const handleNextPhase = () => {
     if (phaseStart) {
       let segmentStart = phaseStart;
@@ -437,6 +449,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
         canAdvancePhase={canAdvancePhase}
       />
 
+      {/* Error and success messages */}
       {error && (
         <Stack spacing={2} mt={2}>
           <Alert severity="error">{error}</Alert>
@@ -448,6 +461,7 @@ const NewRecord: React.FC<NewRecordProps> = ({
         </Stack>
       )}
 
+      {/* Session notes input */}
       {isSessionDone && (
         <Card sx={{ mb: 2 }}>
           {/* Session Notes */}
@@ -468,16 +482,17 @@ const NewRecord: React.FC<NewRecordProps> = ({
         </Card>
       )}
 
-      {/* Session Summary */}
+      {/* Summary and charts */}
       <RecordSummaryCard
         segmentStats={segmentStats}
         baseHR={baseHR}
         peakHR={peakHR}
       />
       {hrrPoints.length > 0 && <HRRChart hrrPoints={hrrPoints} />}
-      {/* ECG Graph */}
       <ECGChart ecgData={ecgHistory}></ECGChart>
       {record && <HRPhasesChart record={record} />}
+      
+      {/* Reset button */}
       <Box display="flex" justifyContent="center" mt={4} mb={2}>
         {/* Reset Button */}
         <Button
