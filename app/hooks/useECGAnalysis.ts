@@ -1,3 +1,16 @@
+/**
+ * @deprecated This hook is deprecated and not currently in use.
+ * It contains advanced ECG analysis features including:
+ * - Heart rate recovery tracking
+ * - Baseline heart rate detection
+ * - Exercise start/end detection
+ * - Advanced peak detection with adaptive thresholding
+ * - Recovery status tracking
+ * 
+ * These features may be reimplemented in future versions.
+ * For current ECG analysis, use useECGMetrics.ts instead.
+ */
+
 import { useState, useEffect, useCallback } from "react";
 import { ECGDataPoint, HRDataPoint } from "@/types/types";
 
