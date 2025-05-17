@@ -1,14 +1,14 @@
 # 💙 Rhythmi
 
-Welcome to **Rhythmi**, the ultimate heart rate monitoring app. Whether you're training like an athlete, recovering from a Netflix binge, or just obsessed with biometrics — this app lets you visualize, analyze, and understand your heartbeat in real time 📈
+Welcome to **Rhythmi**, the ultimate heart rate monitoring app. Whether you're training like an athlete, recovering from a Netflix binge, or just obsessed with biometrics — this app lets you visualize, analyze, and understand your heartbeat in real time.
 
 ## 🚀 Quick Start Guide
 
 Clone the repo and get the dev server running:
 
 ```bash
-git clone [repository-url]
-cd rhythmi
+git clone https://github.com/GalaxyShadesCat/Rhythmi.git
+cd Rhythmi
 npm install
 npm run dev
 ```
@@ -107,13 +107,13 @@ You’ll need:
 
 Collections created:
 - 🗂️ `records`
-- 👥 `users`: your name, birthyear, and gender
+- 👥 `users`: your name, birth year, and gender
 
 ## 🚢 Deploying with Vercel
 
 1. Push your repo to GitHub 📤
 2. Connect GitHub to [Vercel](https://vercel.com)
-3. Set the environment variables in Vercel dashboard 🔐
+3. Set the environment variables in the Vercel dashboard 🔐
 4. Deploy your app! 🌐
 
 ## 🧱 Tech Stack Breakdown
