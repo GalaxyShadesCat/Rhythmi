@@ -221,7 +221,8 @@ function HealthChatbot({
             right: { xs: 0, sm: 24 },
             bottom: { xs: 0, sm: 150 },
             width: { xs: "100%", sm: 400 },
-            height: { xs: "100%", sm: 550 },
+            height: { xs: "100%", sm: "calc(100vh - 300px)" },
+            maxHeight: { xs: "100%", sm: 550 },
           }}
         >
           <Box
