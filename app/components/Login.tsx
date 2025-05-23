@@ -37,7 +37,8 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
   } = useMongoDB();
 
   const [mode, setMode] = useState<"login" | "create">("login"); // Login or account creation mode
-  const [formData, setFormData] = useState<Omit<User, "_id">>({ // Account registration form
+  const [formData, setFormData] = useState<Omit<User, "_id">>({
+    // Account registration form
     user_name: "",
     birth_year: new Date().getFullYear(),
     gender: "other",
@@ -76,10 +77,12 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
     setError("");
     setSuccess(false);
 
-    if (mode === "create") { // Check if in account creation mode
+    if (mode === "create") {
+      // Check if in account creation mode
       const newUser = await createUser(formData);
       if (newUser) saveUser(newUser);
-    } else { // Check if existing user
+    } else {
+      // Check if existing user
       const existingUser = await getUserByUsername(formData.user_name);
       if (existingUser) saveUser(existingUser);
     }
@@ -152,17 +155,20 @@ export default function Login({ user, saveUser, clearUser }: LoginProps) {
         >
           {/* Username Input */}
           <TextField
-            label="Username (enter 'demo' to test)"
+            label="Username"
             name="user_name"
             fullWidth
             value={formData.user_name}
             onChange={handleTextChange}
             margin="normal"
           />
+          <Typography variant="caption" color="textSecondary">
+            Want to try? Enter <strong>demo</strong> and sign in.
+          </Typography>
 
           {mode === "create" && (
             <>
-            {/* Birth Year Input */}
+              {/* Birth Year Input */}
               <TextField
                 label="Birth Year"
                 name="birth_year"
