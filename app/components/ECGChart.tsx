@@ -32,12 +32,11 @@ interface ECGChartProps {
 
 const ECGChart: React.FC<ECGChartProps> = ({
   ecgData,
-  visibleDataPoints = 500,
+  visibleDataPoints = 500, // Default shows 500 data points
 }) => {
-  // Log the data received for debugging
-  // console.log(`ECGChart received ${ecgData.length} data points`);
 
-  const formatTimestamp = (timestamp: number): string => {
+  // Reformat timestamp
+  const formatTimestamp = (timestamp: number): string => { 
     try {
       const date = new Date(timestamp);
       return date.toLocaleTimeString("en-GB", {
@@ -58,6 +57,7 @@ const ECGChart: React.FC<ECGChartProps> = ({
     return ecgData.slice(-visibleDataPoints);
   }, [ecgData, visibleDataPoints]);
 
+  // ECG graph data handling
   const ecgChartData = {
     labels: visibleData.map((point) => formatTimestamp(point.timestamp)),
     datasets: [
@@ -74,6 +74,7 @@ const ECGChart: React.FC<ECGChartProps> = ({
     ],
   };
 
+  // ECG graph configurations
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,

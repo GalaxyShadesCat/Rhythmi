@@ -13,7 +13,6 @@ import { Line } from "react-chartjs-2";
 import annotationPlugin from "chartjs-plugin-annotation";
 import { RecordData, PHASE_COLORS } from "@/types/types";
 
-// Register Chart.js components
 ChartJS.register(
   LineElement,
   PointElement,
@@ -26,17 +25,16 @@ ChartJS.register(
   annotationPlugin
 );
 
+// Define props
 type HRPhasesChartProps = {
   record: RecordData;
 };
 
 export default function HRPhasesChart({ record }: HRPhasesChartProps) {
-  // Build arrays for chart
-  const hrData = record.hr;
+  const hrData = record.hr; // Get heart rate data
 
-  // Build labels and values
-  const labels = hrData.map((dp) => dp.timestamp);
-  const values = hrData.map((dp) => dp.value);
+  const labels = hrData.map((dp) => dp.timestamp); // Get timestamps
+  const values = hrData.map((dp) => dp.value); // Get heart rate values
 
   // Find the min/max timestamp for x domain
   const minTime = labels[0];
@@ -57,6 +55,7 @@ export default function HRPhasesChart({ record }: HRPhasesChartProps) {
     },
   }));
 
+  // HR graph data handling
   const data = {
     labels,
     datasets: [
@@ -72,6 +71,7 @@ export default function HRPhasesChart({ record }: HRPhasesChartProps) {
     ],
   };
 
+  // HR graph configurations
   const options = {
     responsive: true,
     plugins: {

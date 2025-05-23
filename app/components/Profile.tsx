@@ -13,18 +13,17 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import WcIcon from "@mui/icons-material/Wc";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { useEffect, useState } from "react";
-import { BLUE_GRADIENT, LIGHT_BLUE, PRIMARY_BLUE } from "@/utils/constants";
+import { BLUE_GRADIENT, LIGHT_BLUE, PRIMARY_BLUE } from "@/utils/constants"; // Blue theme
 
-// Blue theme colors
-
+// Main function
 export default function Profile() {
-  const { user } = useLocalStorage();
+  const { user } = useLocalStorage(); // Get user data from local storage
   const [age, setAge] = useState<number | null>(null);
 
+  // Calculate age from birth year
   useEffect(() => {
     if (user?.birth_year) {
       const currentYear = new Date().getFullYear();
-      // Fix: Convert to number only if it's a string
       const birthYear =
         typeof user.birth_year === "string"
           ? parseInt(user.birth_year, 10)
@@ -33,6 +32,7 @@ export default function Profile() {
     }
   }, [user?.birth_year]);
 
+  // Check if user is logged in
   if (!user) {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>

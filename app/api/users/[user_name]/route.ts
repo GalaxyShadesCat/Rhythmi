@@ -3,11 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 type Params = Promise<{ user_name: string }>;
 
+// GET handler for fetching user data
 export async function GET(req: NextRequest, context: { params: Params }) {
   const { user_name } = await context.params;
   console.log(`GET /api/users/${user_name} - Looking up user`);
 
   try {
+    // Connect to DB
     const db = await getDb();
     console.log(`GET /api/users/${user_name} - Connected to database`);
     
@@ -25,7 +27,8 @@ export async function GET(req: NextRequest, context: { params: Params }) {
       console.log(`GET /api/users/${user_name} - User not found`);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-
+    
+    // Return user data
     return NextResponse.json(user);
   } catch (error) {
     console.error(`GET /api/users/${user_name} - Error:`, error);

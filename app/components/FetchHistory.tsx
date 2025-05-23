@@ -38,6 +38,7 @@ interface FetchHistoryProps {
   setOpenChat: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+// Main function
 function FetchHistory({
   user_name,
   records,
@@ -45,30 +46,34 @@ function FetchHistory({
   setChatRecord,
   setOpenChat,
 }: FetchHistoryProps) {
-  const [selectedRecord, setSelectedRecord] = useState<RecordData | null>(null);
-  const [visibleDataPoints, setVisibleDataPoints] = useState(500);
-  const [loading, setLoading] = useState(false);
-  const { getUserByUsername, error, setError } = useMongoDB();
+  const [selectedRecord, setSelectedRecord] = useState<RecordData | null>(null); // Currently selected record
+  const [visibleDataPoints, setVisibleDataPoints] = useState(500); // Visible data points for ECG graph
+  const [loading, setLoading] = useState(false); // Loading status
+  const { getUserByUsername, error, setError } = useMongoDB(); // Function to fetch user data with username
 
-  const handleChatAboutRecord = (record: RecordData) => {
-    setChatRecord(record);
+  const handleChatAboutRecord = (record: RecordData) => { // Open chatbot with selected record
+    setChatRecord(record); 
     setOpenChat(true);
   };
 
+  // Function to fetch user data from DB
   const fetchRecords = async () => {
     setError(null);
     setLoading(true);
 
     try {
-      const user = await getUserByUsername(user_name);
+      const user = await getUserByUsername(user_name); // Fetch user data with username
 
+      // Check if user exists
       if (!user || !user._id) {
         setError("User not found or missing ID");
         return;
       }
 
+      // Extract user ID
       const userId = user._id;
 
+      // Fetch user records with user ID
       const response = await fetch(
         `/api/records?user_id=${encodeURIComponent(userId)}`,
         {
@@ -81,13 +86,16 @@ function FetchHistory({
         throw new Error(`Failed to fetch records: ${response.statusText}`);
       }
 
+      // Extract records data
       const result = await response.json();
       const recordsData = result.data || [];
 
+      // Validate data format
       if (!Array.isArray(recordsData)) {
         throw new Error("Invalid records data format received");
       }
 
+      // Update records data
       setRecords(recordsData);
     } catch (err) {
       const message =
@@ -98,15 +106,16 @@ function FetchHistory({
     }
   };
 
+  // Automatically fetch records when the component mounts
   useEffect(() => {
     fetchRecords();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user_name]);
 
+  // Function to reformat ECG data for visualization
   const formatECGChartData = (
     ecgData: { timestamp: number; value: number }[]
   ) => {
-    const visibleData = ecgData.slice(-visibleDataPoints);
+    const visibleData = ecgData.slice(-visibleDataPoints); // Get most recent data points
 
     return {
       labels: visibleData.map(
@@ -125,6 +134,7 @@ function FetchHistory({
     };
   };
 
+  // Function to render ECG metrics
   const renderMetrics = (metrics: ECGMetrics, title: string) => (
     <div className="bg-gray-50 p-3 rounded-lg mb-3">
       <h4 className="font-medium text-gray-800 mb-2">{title}</h4>
@@ -167,6 +177,7 @@ function FetchHistory({
     </div>
   );
 
+  // Chart options for ECG graph
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -180,7 +191,6 @@ function FetchHistory({
       },
       tooltip: {
         callbacks: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           label: (context: any) => {
             return `Value: ${context.parsed.y} µV`;
           },
@@ -218,9 +228,10 @@ function FetchHistory({
       {error && <p className="mt-2 text-red-500">{error}</p>}
 
       {records.length > 0 ? (
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-6"> 
           <div className="flex flex-col space-y-2">
-            <label htmlFor="dataPoints" className="font-medium">
+            {/* Droplist for visible data points */}
+            <label htmlFor="dataPoints" className="font-medium"> 
               Visible Data Points:
             </label>
             <select
@@ -238,6 +249,7 @@ function FetchHistory({
           </div>
 
           <div className="space-y-4">
+            {/* List of user records */}
             {records.map((record) => (
               <div key={record._id} className="p-2 border rounded shadow-sm">
                 <div className="flex justify-between items-start">
@@ -278,6 +290,7 @@ function FetchHistory({
 
                 {selectedRecord?._id === record._id && (
                   <div className="mt-4 space-y-4">
+                    {/* Discuss record in chatbot */}
                     <button
                       onClick={() => handleChatAboutRecord(record)}
                       className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded text-sm whitespace-nowrap transition flex items-center"
@@ -288,8 +301,12 @@ function FetchHistory({
                         fontSize="small"
                       />
                     </button>
+                    {/* Phase metrics display */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {renderMetrics(record.rest_metrics, "Rest Metrics")}
+                      {renderMetrics(
+                        record.rest_metrics, 
+                        "Rest Metrics"
+                      )}
                       {renderMetrics(
                         record.exercise_metrics,
                         "Exercise Metrics"
@@ -300,14 +317,17 @@ function FetchHistory({
                       )}
                     </div>
 
+                    {/* HRR graph */}  
                     {record.hrr_points && record.hrr_points.length > 0 && (
                       <HRRChart hrrPoints={record.hrr_points} />
                     )}
 
+                    {/* HR graph */}
                     {selectedRecord && (
                       <HRPhasesChart record={selectedRecord} />
                     )}
-
+                    
+                    {/* ECG graph */}
                     <div className="mt-4">
                       <h4 className="font-medium text-gray-800 mb-2">
                         ECG Signal
