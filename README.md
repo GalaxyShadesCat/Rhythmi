@@ -1,6 +1,8 @@
-# 💙 Rhythmi
+# Rhythmi
 
-Welcome to **Rhythmi**, the ultimate heart rate monitoring app. Whether you're training like an athlete, recovering from a Netflix binge, or just obsessed with biometrics — this app lets you visualize, analyze, and understand your heartbeat in real time.
+**Live Demo:** https://rhythmi.vercel.app
+
+Welcome to **Rhythmi**, the ultimate heart rate monitoring app. Whether you're training like an athlete, recovering from a Netflix binge, or just obsessed with biometrics, this app lets you visualise, analyse, and understand your heartbeat in real time.
 
 ## 🚀 Quick Start Guide
 
